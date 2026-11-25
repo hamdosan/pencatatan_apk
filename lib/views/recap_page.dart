@@ -1,7 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/expense_controller.dart';
+import '../services/excel_export_service.dart';
 import 'history_page.dart';
 import 'widgets/formatters.dart';
 import 'widgets/month_selector.dart' show kFirstYear;
@@ -54,13 +56,67 @@ class _RecapPageState extends State<RecapPage> {
     );
   }
 
+  bool _exporting = false;
+
+  Future<void> _downloadExcel() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _exporting = true);
+    try {
+      final now = DateTime.now();
+      final recaps = await _controller.recapOfYear(_year);
+      final expenses = await _controller.expensesOfYear(_year);
+      final bytes = ExcelExportService.build(
+        year: _year,
+        recaps: recaps,
+        expenses: expenses,
+        categoryOf: _controller.categoryOf,
+        lastMonth: DateTime(now.year, now.month),
+      );
+      final uri = await FilePicker.saveFile(
+        dialogTitle: 'Simpan rekap Excel',
+        fileName: ExcelExportService.fileName(_year),
+        bytes: bytes,
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      if (uri != null) {
+        messenger.showSnackBar(SnackBar(
+          content: Text('${ExcelExportService.fileName(_year)} tersimpan'),
+        ));
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Gagal membuat Excel: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rekap Bulanan')),
+      appBar: AppBar(
+        title: const Text('Rekap Bulanan'),
+        actions: [
+          _exporting
+              ? const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.download),
+                  tooltip: 'Download Excel',
+                  onPressed: _downloadExcel,
+                ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(

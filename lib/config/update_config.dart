@@ -7,8 +7,8 @@
 /// Setiap rilis wajib:
 /// - tag sesuai versi di pubspec.yaml, mis. `v1.0.1+2`
 /// - melampirkan satu file `.apk`
-const kUpdateRepoOwner = '';
-const kUpdateRepoName = '';
+const kUpdateRepoOwner = 'hamdosan';
+const kUpdateRepoName = 'pencatatan_apk';
 
 bool get isUpdateConfigured =>
     kUpdateRepoOwner.isNotEmpty && kUpdateRepoName.isNotEmpty;

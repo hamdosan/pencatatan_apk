@@ -162,6 +162,19 @@ class DatabaseHelper {
     return {for (final r in rows) r['ym'] as String: (r['n'] as num).toInt()};
   }
 
+  /// Semua pengeluaran dalam rentang [from] (inklusif) sampai [to]
+  /// (eksklusif), urut tanggal naik.
+  Future<List<Expense>> getExpensesInRange(DateTime from, DateTime to) async {
+    final db = await database;
+    final rows = await db.query(
+      'expenses',
+      where: 'date >= ? AND date < ?',
+      whereArgs: [Expense.dateToDb(from), Expense.dateToDb(to)],
+      orderBy: 'date ASC, id ASC',
+    );
+    return rows.map(Expense.fromMap).toList();
+  }
+
   Future<int> insertExpense(Expense e) async {
     final db = await database;
     return db.insert('expenses', e.toMap()..remove('id'));

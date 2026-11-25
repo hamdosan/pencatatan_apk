@@ -110,6 +110,10 @@ class ExpenseController extends ChangeNotifier {
     ];
   }
 
+  /// Semua pengeluaran pada [year], urut tanggal naik.
+  Future<List<Expense>> expensesOfYear(int year) =>
+      _db.getExpensesInRange(DateTime(year), DateTime(year + 1));
+
   Category? categoryOf(int id) {
     for (final c in _categories) {
       if (c.id == id) return c;
