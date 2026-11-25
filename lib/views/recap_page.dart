@@ -58,31 +58,56 @@ class _RecapPageState extends State<RecapPage> {
 
   bool _exporting = false;
 
-  Future<void> _downloadExcel() async {
+  /// Tampilkan pilihan bulan, lalu ekspor bulan yang dipilih.
+  Future<void> _chooseMonthsAndDownload() async {
+    final recaps = await _future;
+    if (!mounted) return;
+    final now = DateTime.now();
+    final available = [
+      for (final r in recaps)
+        if (!r.month.isAfter(DateTime(now.year, now.month))) r,
+    ];
+    final selected = _controller.selectedMonth;
+    final months = await showModalBottomSheet<Set<int>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _MonthExportSheet(
+        year: _year,
+        recaps: available,
+        initial: {
+          if (selected.year == _year &&
+              available.any((r) => r.month.month == selected.month && r.count > 0))
+            selected.month,
+        },
+      ),
+    );
+    if (months != null && months.isNotEmpty) await _downloadExcel(months);
+  }
+
+  Future<void> _downloadExcel(Set<int> months) async {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _exporting = true);
     try {
-      final now = DateTime.now();
       final recaps = await _controller.recapOfYear(_year);
       final expenses = await _controller.expensesOfYear(_year);
       final bytes = ExcelExportService.build(
         year: _year,
+        months: months,
         recaps: recaps,
         expenses: expenses,
         categoryOf: _controller.categoryOf,
-        lastMonth: DateTime(now.year, now.month),
       );
+      final name = ExcelExportService.fileName(_year, months);
       final uri = await FilePicker.saveFile(
         dialogTitle: 'Simpan rekap Excel',
-        fileName: ExcelExportService.fileName(_year),
+        fileName: name,
         bytes: bytes,
         mimeType:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
       if (uri != null) {
-        messenger.showSnackBar(SnackBar(
-          content: Text('${ExcelExportService.fileName(_year)} tersimpan'),
-        ));
+        messenger.showSnackBar(SnackBar(content: Text('$name tersimpan')));
       }
     } catch (e) {
       messenger.showSnackBar(
@@ -113,7 +138,7 @@ class _RecapPageState extends State<RecapPage> {
               : IconButton(
                   icon: const Icon(Icons.download),
                   tooltip: 'Download Excel',
-                  onPressed: _downloadExcel,
+                  onPressed: _chooseMonthsAndDownload,
                 ),
         ],
       ),
@@ -188,6 +213,9 @@ class _RecapPageState extends State<RecapPage> {
                         recap: r,
                         maxTotal: maxTotal,
                         onTap: r.count == 0 ? null : () => _openMonth(r.month),
+                        onDownload: r.count == 0 || _exporting
+                            ? null
+                            : () => _downloadExcel({r.month.month}),
                       ),
                   ],
                 );
@@ -205,11 +233,13 @@ class _MonthRecapTile extends StatelessWidget {
     required this.recap,
     required this.maxTotal,
     this.onTap,
+    this.onDownload,
   });
 
   final MonthRecap recap;
   final int maxTotal;
   final VoidCallback? onTap;
+  final VoidCallback? onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -280,12 +310,121 @@ class _MonthRecapTile extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onDownload != null)
+                IconButton(
+                  icon: const Icon(Icons.file_download_outlined),
+                  tooltip: 'Download Excel ${formatMonth(recap.month)}',
+                  onPressed: onDownload,
+                )
+              else
+                const SizedBox(width: 48),
               Icon(
                 Icons.chevron_right,
                 color: onTap == null ? scheme.outlineVariant : null,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Bottom sheet pilih bulan yang akan diekspor ke Excel.
+class _MonthExportSheet extends StatefulWidget {
+  const _MonthExportSheet({
+    required this.year,
+    required this.recaps,
+    required this.initial,
+  });
+
+  final int year;
+
+  /// Bulan yang sudah lewat/berjalan pada [year], urut Jan -> Des.
+  final List<MonthRecap> recaps;
+  final Set<int> initial;
+
+  @override
+  State<_MonthExportSheet> createState() => _MonthExportSheetState();
+}
+
+class _MonthExportSheetState extends State<_MonthExportSheet> {
+  late final Set<int> _selected = {...widget.initial};
+
+  List<int> get _withData => [
+        for (final r in widget.recaps)
+          if (r.count > 0) r.month.month,
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final withData = _withData;
+    final allSelected =
+        withData.isNotEmpty && withData.every(_selected.contains);
+
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text('Pilih bulan untuk diunduh (${widget.year})',
+                  style: theme.textTheme.titleMedium),
+            ),
+            CheckboxListTile(
+              title: const Text('Pilih semua'),
+              value: allSelected,
+              onChanged: withData.isEmpty
+                  ? null
+                  : (v) => setState(() {
+                        v == true
+                            ? _selected.addAll(withData)
+                            : _selected.clear();
+                      }),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final r in widget.recaps)
+                    CheckboxListTile(
+                      title: Text(formatMonth(r.month)),
+                      subtitle: Text(r.count == 0
+                          ? 'Belum ada catatan'
+                          : '${r.count} transaksi · ${formatRupiah(r.total)}'),
+                      value: _selected.contains(r.month.month),
+                      onChanged: r.count == 0
+                          ? null
+                          : (v) => setState(() {
+                                v == true
+                                    ? _selected.add(r.month.month)
+                                    : _selected.remove(r.month.month);
+                              }),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: FilledButton.icon(
+                onPressed: _selected.isEmpty
+                    ? null
+                    : () => Navigator.pop(context, _selected),
+                icon: const Icon(Icons.download),
+                label: Text(_selected.isEmpty
+                    ? 'Pilih minimal 1 bulan'
+                    : 'Download ${_selected.length} bulan'),
+              ),
+            ),
+          ],
         ),
       ),
     );

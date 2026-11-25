@@ -7,7 +7,7 @@ import '../controllers/expense_controller.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 
-/// Membuat file .xlsx rekap tahunan:
+/// Membuat file .xlsx rekap untuk bulan-bulan yang dipilih:
 /// - "Rekap"       : total & jumlah transaksi per bulan
 /// - "Per Kategori": total per kategori setahun
 /// - "Detail"      : semua transaksi
@@ -26,24 +26,58 @@ class ExcelExportService {
   static final _pct = CellStyle(numberFormat: _percent);
   static final _bold = CellStyle(bold: true);
 
-  static String fileName(int year) => 'Rekap_Pengeluaran_$year.xlsx';
+  static String _short(int year, int m) =>
+      DateFormat('MMM', 'id_ID').format(DateTime(year, m));
 
-  /// [recaps] = 12 bulan dari [ExpenseController.recapOfYear];
-  /// bulan setelah [lastMonth] tidak ditulis.
+  /// Label periode, mis. "November 2026", "Jan, Feb, Mar 2026",
+  /// atau "Tahun 2026" bila 12 bulan dipilih.
+  static String periodLabel(int year, Set<int> months) {
+    final sorted = months.toList()..sort();
+    if (sorted.length == 12) return 'Tahun $year';
+    if (sorted.length == 1) {
+      return DateFormat('MMMM y', 'id_ID').format(DateTime(year, sorted.first));
+    }
+    return '${sorted.map((m) => _short(year, m)).join(', ')} $year';
+  }
+
+  /// Mis. Rekap_Pengeluaran_2026-11.xlsx, Rekap_Pengeluaran_2026_Jan-Feb.xlsx,
+  /// atau Rekap_Pengeluaran_2026.xlsx bila 12 bulan.
+  static String fileName(int year, Set<int> months) {
+    final sorted = months.toList()..sort();
+    if (sorted.length == 12) return 'Rekap_Pengeluaran_$year.xlsx';
+    if (sorted.length == 1) {
+      return 'Rekap_Pengeluaran_$year-${sorted.first.toString().padLeft(2, '0')}.xlsx';
+    }
+    return 'Rekap_Pengeluaran_${year}_${sorted.map((m) => _short(year, m)).join('-')}.xlsx';
+  }
+
+  /// [recaps] = 12 bulan dari [ExpenseController.recapOfYear].
+  /// Hanya bulan dalam [months] (1–12) yang ditulis ke file.
   static Uint8List build({
     required int year,
+    required Set<int> months,
     required List<MonthRecap> recaps,
     required List<Expense> expenses,
     required Category? Function(int id) categoryOf,
-    required DateTime lastMonth,
   }) {
     final excel = Excel.createExcel();
-    final recapName = 'Rekap $year';
+    const recapName = 'Rekap';
     excel.rename(excel.getDefaultSheet()!, recapName);
 
-    _writeRecap(excel[recapName], year, recaps, lastMonth);
-    _writeCategories(excel['Per Kategori'], year, expenses, categoryOf);
-    _writeDetail(excel['Detail'], expenses, categoryOf);
+    final period = periodLabel(year, months);
+    final selectedRecaps = [
+      for (final r in recaps)
+        if (months.contains(r.month.month)) r,
+    ];
+    final selectedExpenses = [
+      for (final e in expenses)
+        if (e.date.year == year && months.contains(e.date.month)) e,
+    ];
+
+    _writeRecap(excel[recapName], period, selectedRecaps);
+    _writeCategories(
+        excel['Per Kategori'], period, selectedExpenses, categoryOf);
+    _writeDetail(excel['Detail'], selectedExpenses, categoryOf);
     excel.setDefaultSheet(recapName);
 
     return Uint8List.fromList(excel.encode()!);
@@ -64,18 +98,16 @@ class ExcelExportService {
 
   static void _writeRecap(
     Sheet s,
-    int year,
+    String period,
     List<MonthRecap> recaps,
-    DateTime lastMonth,
   ) {
-    _set(s, 0, 0, TextCellValue('Rekap Pengeluaran Tahun $year'), _title);
+    _set(s, 0, 0, TextCellValue('Rekap Pengeluaran $period'), _title);
     _headerRow(s, 2, ['Bulan', 'Jumlah Transaksi', 'Total', 'Perubahan vs Bulan Lalu']);
 
     var row = 3;
     var total = 0, count = 0;
     for (final r in recaps) {
-      if (r.month.isAfter(lastMonth)) break;
-      _set(s, 0, row, TextCellValue(DateFormat('MMMM', 'id_ID').format(r.month)));
+      _set(s, 0, row, TextCellValue(DateFormat('MMMM y', 'id_ID').format(r.month)));
       _set(s, 1, row, IntCellValue(r.count));
       _set(s, 2, row, IntCellValue(r.total), _money);
       final change = r.changePercent;
@@ -98,7 +130,7 @@ class ExcelExportService {
 
   static void _writeCategories(
     Sheet s,
-    int year,
+    String period,
     List<Expense> expenses,
     Category? Function(int id) categoryOf,
   ) {
@@ -111,7 +143,7 @@ class ExcelExportService {
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    _set(s, 0, 0, TextCellValue('Pengeluaran per Kategori $year'), _title);
+    _set(s, 0, 0, TextCellValue('Pengeluaran per Kategori $period'), _title);
     _headerRow(s, 2, ['Kategori', 'Jumlah Transaksi', 'Total', 'Porsi']);
     var row = 3;
     for (final e in sorted) {
