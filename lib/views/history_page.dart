@@ -30,6 +30,7 @@ class _HistoryPageState extends State<HistoryPage> {
     ];
 
     return AppBackground(
+        ambient: true,
         child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(

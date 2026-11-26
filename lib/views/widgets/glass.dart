@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import 'ambient_effects.dart';
 
 /// Latar belakang gradasi navy di belakang seluruh layar.
+///
+/// [ambient] menambahkan animasi latar (salju di mode gelap, cahaya di mode
+/// terang) di antara gradasi dan konten.
 class AppBackground extends StatelessWidget {
-  const AppBackground({super.key, required this.child});
+  const AppBackground({super.key, required this.child, this.ambient = false});
   final Widget child;
+  final bool ambient;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +23,12 @@ class AppBackground extends StatelessWidget {
           colors: [p.bgTop, p.bgBottom],
         ),
       ),
-      child: child,
+      child: ambient
+          ? Stack(
+              fit: StackFit.expand,
+              children: [const AmbientEffects(), child],
+            )
+          : child,
     );
   }
 }

@@ -22,21 +22,21 @@ void main() {
     await tester.pumpWidget(app());
 
     expect(find.text('Dashboard'), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Pencatatan'), findsOneWidget);
-    expect(find.text('Tambah'), findsOneWidget);
+    expect(find.byTooltip('Home'), findsOneWidget);
+    expect(find.byTooltip('Pencatatan'), findsOneWidget);
+    expect(find.byTooltip('Tambah pengeluaran'), findsOneWidget);
   });
 
   testWidgets('Navigasi bawah pindah ke Pencatatan lalu kembali ke Home',
       (tester) async {
     await tester.pumpWidget(app());
 
-    await tester.tap(find.text('Pencatatan'));
+    await tester.tap(find.byTooltip('Pencatatan'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Catatan Pengeluaran'), findsOneWidget);
+    expect(find.text('Pencatatan'), findsOneWidget);
 
-    await tester.tap(find.text('Home'));
+    await tester.tap(find.byTooltip('Home'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Dashboard'), findsOneWidget);
@@ -76,7 +76,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(app());
 
-    await tester.tap(find.text('Tambah'));
+    await tester.tap(find.byTooltip('Tambah pengeluaran'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Tambah Pengeluaran'), findsOneWidget);

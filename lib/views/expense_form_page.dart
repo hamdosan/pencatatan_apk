@@ -211,6 +211,7 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
     final categories = context.read<ExpenseController>().categories;
 
     return AppBackground(
+        ambient: true,
         child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(

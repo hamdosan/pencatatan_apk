@@ -11,6 +11,7 @@ import '../services/location_service.dart';
 import 'expense_form_page.dart';
 import 'theme/app_theme.dart';
 import 'widgets/category_icons.dart';
+import 'widgets/expense_tile.dart';
 import 'widgets/formatters.dart';
 import 'widgets/glass.dart';
 import 'widgets/month_selector.dart';
@@ -535,6 +536,7 @@ class _CategoryTiles extends StatelessWidget {
                   child: GlassCard(
                     radius: 22,
                     padding: const EdgeInsets.all(14),
+                    onTap: () => _showCategoryExpenses(context, entry.key),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -600,6 +602,153 @@ class _CategoryTiles extends StatelessWidget {
           ],
         );
       }),
+    );
+  }
+}
+
+/// Lembar bawah berisi daftar pengeluaran bulan ini untuk satu kategori.
+void _showCategoryExpenses(BuildContext context, int categoryId) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _CategoryExpensesSheet(categoryId: categoryId),
+  );
+}
+
+class _CategoryExpensesSheet extends StatelessWidget {
+  const _CategoryExpensesSheet({required this.categoryId});
+  final int categoryId;
+
+  @override
+  Widget build(BuildContext context) {
+    // watch: daftar ikut berubah bila pengeluaran diubah/dihapus dari form.
+    final c = context.watch<ExpenseController>();
+    final p = AppPalette.of(context);
+    final text = Theme.of(context).textTheme;
+    final cat = c.categoryOf(categoryId);
+    final color = Color(cat?.colorValue ?? 0xFF607D8B);
+    final items = c.expenses.where((e) => e.categoryId == categoryId).toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final sum = items.fold<int>(0, (s, e) => s + e.amount);
+    final total = c.totalAmount;
+    final ratio = total == 0 ? 0.0 : sum / total;
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      minChildSize: 0.35,
+      maxChildSize: 0.95,
+      builder: (context, scroll) => DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [p.bgTop, p.bgBottom],
+          ),
+        ),
+        child: CustomScrollView(
+          controller: scroll,
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: p.muted.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GlassCard(
+                      radius: 22,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              iconFor(cat?.icon ?? 'other'),
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  cat?.name ?? '-',
+                                  style: text.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '${items.length} transaksi · '
+                                  '${(ratio * 100).round()}% bulan ini',
+                                  style: text.bodySmall?.copyWith(
+                                    color: p.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            formatRupiah(sum),
+                            style: text.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (items.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    'Belum ada pengeluaran di kategori ini.',
+                    style: text.bodyMedium?.copyWith(color: p.muted),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                sliver: SliverList.separated(
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) => ExpenseTile(
+                    expense: items[i],
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ExpenseFormPage(expense: items[i]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

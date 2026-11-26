@@ -57,6 +57,10 @@ void main() {
 
   testWidgets('judul memuat bulan, filter menyisakan kategori terpilih',
       (tester) async {
+    // Animasi latar berjalan terus; matikan agar pumpAndSettle bisa selesai.
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await tester.pumpWidget(
       ChangeNotifierProvider<ExpenseController>(
         create: (_) => _FakeController(),

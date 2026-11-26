@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,8 +14,8 @@ import 'theme/app_theme.dart';
 import 'widgets/glass.dart';
 import 'widgets/update_dialog.dart';
 
-/// Kerangka utama: latar gradasi, judul besar, drawer menu, navigasi bawah
-/// (Home / Pencatatan) dan tombol "Tambah".
+/// Kerangka utama: latar gradasi, judul besar, drawer menu, dan navigasi bawah
+/// berupa ikon (Home / Pencatatan) dengan tombol "+" di tengah.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -37,7 +39,11 @@ class _MainShellState extends State<MainShell>
   int _index = 0;
 
   static const _titles = ['Dashboard', 'Pencatatan'];
-  static const _tabs = ['Home', 'Pencatatan'];
+  static const _tabs = [
+    _NavTab('Home', Icons.home_outlined, Icons.home_rounded),
+    _NavTab(
+        'Pencatatan', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
+  ];
   static const _pages = [DashboardPage(), RecordsPage()];
 
   @override
@@ -100,6 +106,7 @@ class _MainShellState extends State<MainShell>
         if (!didPop) _select(0);
       },
       child: AppBackground(
+        ambient: true,
         child: Scaffold(
           key: _scaffoldKey,
           backgroundColor: Colors.transparent,
@@ -144,7 +151,8 @@ class _MainShellState extends State<MainShell>
                 padding: const EdgeInsets.fromLTRB(28, 24, 16, 16),
                 child: Text(
                   'Catatan Pengeluaran',
-                  style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style:
+                      text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
               const NavigationDrawerDestination(
@@ -193,17 +201,13 @@ class _MainShellState extends State<MainShell>
             ),
             child: KeyedSubtree(key: ValueKey(_index), child: _pages[_index]),
           ),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: _AddButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ExpenseFormPage()),
-            ),
-          ),
-          bottomNavigationBar: _DotNavBar(
-            labels: _tabs,
+          bottomNavigationBar: _IconNavBar(
+            tabs: _tabs,
             selected: _index,
             onSelect: _select,
+            onAdd: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ExpenseFormPage()),
+            ),
           ),
         ),
       ),
@@ -211,7 +215,197 @@ class _MainShellState extends State<MainShell>
   }
 }
 
-/// Tombol pil terang "Tambah Pengeluaran" (seperti "Send Money").
+class _NavTab {
+  const _NavTab(this.label, this.icon, this.selectedIcon);
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+}
+
+// Ukuran bottom bar bertakik (lihat _NotchedBarPainter).
+const double _barHeight = 72;
+const double _barDip = 10; // turunan tepi atas dari sudut ke tengah
+const double _notchRadius = 40;
+const double _buttonRadius = 30;
+const double _buttonLift = 30; // tinggi tombol yang menonjol di atas bar
+
+/// Navigasi bawah: bar melayang dengan takik melengkung di tengah, tombol
+/// "+" bulat di takik, ikon Home (kiri) dan Pencatatan (kanan).
+class _IconNavBar extends StatelessWidget {
+  const _IconNavBar({
+    required this.tabs,
+    required this.selected,
+    required this.onSelect,
+    required this.onAdd,
+  });
+
+  final List<_NavTab> tabs;
+  final int selected;
+  final ValueChanged<int> onSelect;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Nada kartu kaca di atas latar, dibuat opak agar konten tidak tembus.
+    final barColor = Color.alphaBlend(p.glass, p.bgBottom);
+
+    Widget tab(int i) => Expanded(
+          child: _NavIcon(
+            tab: tabs[i],
+            active: i == selected,
+            onTap: () => onSelect(i),
+          ),
+        );
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        child: SizedBox(
+          height: _barHeight + _buttonLift,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                top: _buttonLift,
+                child: CustomPaint(
+                  painter: _NotchedBarPainter(
+                    color: barColor,
+                    border: p.glassBorder,
+                    shadow: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: _barDip),
+                    child: Row(
+                      children: [
+                        tab(0),
+                        const SizedBox(width: _notchRadius * 2 + 24),
+                        tab(1),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: _buttonLift + _notchCenterY - _buttonRadius,
+                left: 0,
+                right: 0,
+                child: Center(child: _AddButton(onPressed: onAdd)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Ujung lengkung takik: [_notchEdgeInset] ke dalam dari radius takik dan
+/// [_notchEdgeDrop] di bawah garis [_barDip].
+const double _notchEdgeInset = 2;
+const double _notchEdgeDrop = 8;
+
+/// Posisi y pusat lingkaran takik, relatif ke tepi atas bar.
+final double _notchCenterY = _barDip +
+    _notchEdgeDrop -
+    math.sqrt(_notchRadius * _notchRadius -
+        (_notchRadius - _notchEdgeInset) * (_notchRadius - _notchEdgeInset));
+
+class _NotchedBarPainter extends CustomPainter {
+  _NotchedBarPainter({
+    required this.color,
+    required this.border,
+    required this.shadow,
+  });
+
+  final Color color;
+  final Color border;
+  final Color shadow;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    const r = 28.0; // radius sudut
+    final cx = w / 2;
+    const e = _notchRadius - _notchEdgeInset;
+
+    final path = Path()
+      ..moveTo(0, r)
+      ..quadraticBezierTo(0, 0, r, 0)
+      ..lineTo(cx - _notchRadius - 14, _barDip)
+      ..quadraticBezierTo(
+          cx - _notchRadius, _barDip, cx - e, _barDip + _notchEdgeDrop)
+      ..arcToPoint(
+        Offset(cx + e, _barDip + _notchEdgeDrop),
+        radius: const Radius.circular(_notchRadius),
+        clockwise: false,
+      )
+      ..quadraticBezierTo(
+          cx + _notchRadius, _barDip, cx + _notchRadius + 14, _barDip)
+      ..lineTo(w - r, 0)
+      ..quadraticBezierTo(w, 0, w, r)
+      ..lineTo(w, h - r)
+      ..quadraticBezierTo(w, h, w - r, h)
+      ..lineTo(r, h)
+      ..quadraticBezierTo(0, h, 0, h - r)
+      ..close();
+
+    canvas.drawShadow(path, shadow, 12, false);
+    canvas.drawPath(path, Paint()..color = color);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = border
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_NotchedBarPainter old) =>
+      old.color != color || old.border != border || old.shadow != shadow;
+}
+
+class _NavIcon extends StatelessWidget {
+  const _NavIcon({
+    required this.tab,
+    required this.active,
+    required this.onTap,
+  });
+
+  final _NavTab tab;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: tab.label,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 30,
+        child: Center(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              active ? tab.selectedIcon : tab.icon,
+              key: ValueKey(active),
+              size: 30,
+              color: active ? scheme.onSurface : p.muted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tombol bulat "+" untuk menambah pengeluaran, duduk di takik bar.
 class _AddButton extends StatelessWidget {
   const _AddButton({required this.onPressed});
   final VoidCallback onPressed;
@@ -220,124 +414,31 @@ class _AddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = AppPalette.of(context);
     const navy = Color(0xFF17304F);
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [p.panelTop, const Color(0xFFE3DDF7)],
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x40000000),
-            blurRadius: 20,
-            offset: Offset(0, 8),
+    return Tooltip(
+      message: 'Tambah pengeluaran',
+      child: Container(
+        width: _buttonRadius * 2,
+        height: _buttonRadius * 2,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [p.panelTop, const Color(0xFFE3DDF7)],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 24, 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: navy.withValues(alpha: 0.12),
-                  ),
-                  child: const Icon(Icons.add, color: navy, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Tambah Pengeluaran',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: navy,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x40000000),
+              blurRadius: 20,
+              offset: Offset(0, 8),
             ),
-          ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-/// Navigasi bawah berupa teks dengan titik di bawah tab aktif.
-class _DotNavBar extends StatelessWidget {
-  const _DotNavBar({
-    required this.labels,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final List<String> labels;
-  final int selected;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [p.bgBottom.withValues(alpha: 0), p.bgBottom],
-          stops: const [0, 0.45],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              for (var i = 0; i < labels.length; i++)
-                Expanded(
-                  child: InkWell(
-                    onTap: () => onSelect(i),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
-                          style: (text.labelLarge ?? const TextStyle())
-                              .copyWith(
-                            color: i == selected
-                                ? scheme.onSurface
-                                : p.muted,
-                            fontWeight: i == selected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                          child: Text(labels[i]),
-                        ),
-                        const SizedBox(height: 6),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: i == selected ? 5 : 0,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: scheme.onSurface,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onPressed,
+            child: const Icon(Icons.add_rounded, color: navy, size: 34),
           ),
         ),
       ),
