@@ -9,6 +9,7 @@ import 'controllers/theme_controller.dart';
 import 'l10n/l10n.dart';
 import 'services/reminder_service.dart';
 import 'views/main_shell.dart';
+import 'views/splash_page.dart';
 import 'views/theme/app_theme.dart';
 
 Future<void> main() async {
@@ -32,7 +33,10 @@ Future<void> main() async {
 }
 
 class ExpenseTrackerApp extends StatefulWidget {
-  const ExpenseTrackerApp({super.key});
+  const ExpenseTrackerApp({super.key, this.splash = true});
+
+  // false di test agar langsung ke MainShell.
+  final bool splash;
 
   @override
   State<ExpenseTrackerApp> createState() => _ExpenseTrackerAppState();
@@ -69,7 +73,7 @@ class _ExpenseTrackerAppState extends State<ExpenseTrackerApp> {
       locale: lang.locale,
       supportedLocales: [for (final l in AppLanguage.values) l.locale],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: const MainShell(),
+      home: widget.splash ? const SplashPage() : const MainShell(),
     );
   }
 }

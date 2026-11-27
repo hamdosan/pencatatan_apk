@@ -17,7 +17,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => ThemeController()),
           ChangeNotifierProvider(create: (_) => LocaleController()),
         ],
-        child: const ExpenseTrackerApp(),
+        child: const ExpenseTrackerApp(splash: false),
       );
 
   testWidgets('Halaman utama tampil', (tester) async {
