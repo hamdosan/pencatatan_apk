@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../controllers/expense_controller.dart';
 import '../models/expense.dart';
 import '../services/location_service.dart';
+import 'balance_page.dart';
 import 'expense_form_page.dart';
 import 'theme/app_theme.dart';
 import 'widgets/category_icons.dart';
@@ -39,6 +40,7 @@ class DashboardPage extends StatelessWidget {
           )
         else ...[
           _Hero(controller: c),
+          _BalanceCard(controller: c),
           _StatRow(controller: c),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -258,6 +260,95 @@ class _HeroState extends State<_Hero> {
   }
 }
 
+// Saldo seluruh waktu. Tap kartu membuka halaman saldo; ikon mata menampilkan
+// atau menyembunyikan nominal seperti kartu total.
+class _BalanceCard extends StatefulWidget {
+  const _BalanceCard({required this.controller});
+  final ExpenseController controller;
+
+  @override
+  State<_BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<_BalanceCard> {
+  bool _hidden = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.controller;
+    final p = AppPalette.of(context);
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+
+    return GlassCard(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      radius: 20,
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 4, 8),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const BalancePage()),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: p.glass,
+              border: Border.all(color: p.glassBorder),
+            ),
+            child: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(tr('balance'),
+                    style: text.labelSmall?.copyWith(color: p.muted)),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  layoutBuilder: (current, previous) => Stack(
+                    alignment: AlignmentDirectional.centerStart,
+                    children: [...previous, if (current != null) current],
+                  ),
+                  child: FittedBox(
+                    key: ValueKey(_hidden),
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      _hidden ? 'Rp ••••••' : formatRupiah(c.balance),
+                      style: text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: !_hidden && c.balance < 0 ? scheme.error : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: _hidden ? tr('show') : tr('hide'),
+            onPressed: () => setState(() => _hidden = !_hidden),
+            icon: Icon(
+              _hidden
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: p.muted,
+            ),
+          ),
+          IconButton(
+            tooltip: tr('addIncome'),
+            onPressed: () => showIncomeDialog(context),
+            icon: const Icon(Icons.add_circle_outline),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatRow extends StatelessWidget {
   const _StatRow({required this.controller});
   final ExpenseController controller;
@@ -348,23 +439,9 @@ class _EmptyChart extends StatelessWidget {
       );
 }
 
-String _compact(num v) {
-  if (v >= 1000000) {
-    return tr('compactMillion',
-        {'v': NumberFormat('#,##0.#', L10n.intlLocale).format(v / 1000000)});
-  }
-  if (v >= 1000) return tr('compactThousand', {'v': (v / 1000).round()});
-  return v.toStringAsFixed(0);
-}
+String _compact(num v) => compactNumber(v);
 
-double _niceMax(int max) {
-  if (max <= 0) return 1;
-  final mag = math.pow(10, (math.log(max) / math.ln10).floor()).toDouble();
-  for (final step in [1, 2, 2.5, 5, 10]) {
-    if (step * mag >= max) return step * mag;
-  }
-  return 10 * mag;
-}
+double _niceMax(int max) => niceChartMax(max);
 
 class _TrendLineChart extends StatelessWidget {
   const _TrendLineChart({required this.controller});

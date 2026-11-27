@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../controllers/theme_controller.dart';
 import '../services/auto_update_checker.dart';
 import '../services/cache_service.dart';
+import 'balance_page.dart';
 import 'dashboard_page.dart';
 import 'expense_form_page.dart';
 import 'history_page.dart';
@@ -91,9 +92,13 @@ class _MainShellState extends State<MainShell>
       );
     } else if (i == _pages.length + 2) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const SettingsPage()),
+        MaterialPageRoute(builder: (_) => const BalancePage()),
       );
     } else if (i == _pages.length + 3) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const SettingsPage()),
+      );
+    } else if (i == _pages.length + 4) {
       showUpdateDialog(context);
     } else {
       _clearCache();
@@ -227,6 +232,11 @@ class _MainShellState extends State<MainShell>
                 icon: const Icon(Icons.calendar_view_month_outlined),
                 selectedIcon: const Icon(Icons.calendar_view_month),
                 label: Text(tr('navRecap')),
+              ),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                selectedIcon: const Icon(Icons.account_balance_wallet),
+                label: Text(tr('balance')),
               ),
               NavigationDrawerDestination(
                 icon: const Icon(Icons.settings_outlined),

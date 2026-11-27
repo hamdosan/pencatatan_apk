@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart' hide Category;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
+import '../models/income.dart';
 import '../services/reminder_service.dart';
 import '../l10n/l10n.dart';
 
@@ -41,6 +43,61 @@ class ExpenseController extends ChangeNotifier {
   bool get isCurrentMonth {
     final now = DateTime.now();
     return _selectedMonth.year == now.year && _selectedMonth.month == now.month;
+  }
+
+  static const _monthlyIncomeKey = 'monthly_income';
+
+  List<Income> _incomes = [];
+  int _monthlyIncome = 0;
+
+  // Pemasukan tetap per bulan (mis. gaji). Berlaku untuk setiap bulan.
+  int get monthlyIncome => _monthlyIncome;
+
+  // Pemasukan tambahan pada bulan terpilih.
+  List<Income> get incomes => List.unmodifiable(
+      _incomes.where((i) => _sameMonth(i.date, _selectedMonth)));
+
+  static bool _sameMonth(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month;
+
+  int incomeOf(DateTime month) =>
+      monthlyIncome +
+      _incomes
+          .where((i) => _sameMonth(i.date, month))
+          .fold(0, (sum, i) => sum + i.amount);
+
+  // Saldo bulan terpilih = pemasukan bulan ini - pengeluaran bulan ini.
+  int get monthIncome => incomeOf(_selectedMonth);
+  int get balance => monthIncome - totalAmount;
+
+  // (bulan, pemasukan, pengeluaran) untuk grafik, berakhir di bulan terpilih.
+  List<(DateTime, int, int)> get balanceTrend => [
+        for (final (m, expense) in _trend) (m, incomeOf(m), expense),
+      ];
+
+  Future<void> _loadBalance() async {
+    _incomes = await _db.getIncomes();
+  }
+
+  Future<void> setMonthlyIncome(int amount) async {
+    _monthlyIncome = amount;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_monthlyIncomeKey, amount);
+  }
+
+  Future<void> addIncome(Income income) async {
+    await _db.insertIncome(income);
+    await _loadBalance();
+    notifyListeners();
+  }
+
+  Future<void> deleteIncome(int id) async {
+    _incomes.removeWhere((i) => i.id == id);
+    notifyListeners();
+    await _db.deleteIncome(id);
+    await _loadBalance();
+    notifyListeners();
   }
 
   List<Expense> get locationHistory =>
@@ -127,6 +184,8 @@ class ExpenseController extends ChangeNotifier {
   Future<void> init() async {
     try {
       _categories = await _db.getCategories();
+      final prefs = await SharedPreferences.getInstance();
+      _monthlyIncome = prefs.getInt(_monthlyIncomeKey) ?? 0;
       await loadExpenses();
     } catch (e) {
       _error = tr('loadDataFailed', {'e': e});
@@ -145,6 +204,7 @@ class ExpenseController extends ChangeNotifier {
         _selectedMonth.month,
       );
       await _loadTrend();
+      await _loadBalance();
     } catch (e) {
       _error = tr('loadExpensesFailed', {'e': e});
     }

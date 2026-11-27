@@ -3,13 +3,14 @@ import 'package:sqflite/sqflite.dart';
 
 import '../models/category.dart';
 import '../models/expense.dart';
+import '../models/income.dart';
 
 class DatabaseHelper {
   DatabaseHelper._();
   static final DatabaseHelper instance = DatabaseHelper._();
 
   static const _dbName = 'expense_tracker.db';
-  static const _dbVersion = 6;
+  static const _dbVersion = 7;
 
   static Database? _database;
 
@@ -67,6 +68,21 @@ class DatabaseHelper {
             where: 'title = ?', whereArgs: [from]);
       }
     }
+    if (oldVersion < 7) {
+      await _createV7Tables(db);
+    }
+  }
+
+  // Tabel pemasukan (saldo).
+  static Future<void> _createV7Tables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS incomes (
+        id     INTEGER PRIMARY KEY AUTOINCREMENT,
+        amount INTEGER NOT NULL CHECK (amount > 0),
+        date   TEXT    NOT NULL,
+        note   TEXT
+      )
+    ''');
   }
 
   static Future<void> _addColumnIfMissing(
@@ -109,6 +125,7 @@ class DatabaseHelper {
     ''');
 
     await db.execute('CREATE INDEX idx_expenses_date ON expenses (date)');
+    await _createV7Tables(db);
 
     final batch = db.batch();
     for (final c in _defaultCategories) {
@@ -225,5 +242,21 @@ class DatabaseHelper {
   Future<int> deleteExpense(int id) async {
     final db = await database;
     return db.delete('expenses', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Income>> getIncomes() async {
+    final db = await database;
+    final rows = await db.query('incomes', orderBy: 'date DESC, id DESC');
+    return rows.map(Income.fromMap).toList();
+  }
+
+  Future<int> insertIncome(Income i) async {
+    final db = await database;
+    return db.insert('incomes', i.toMap()..remove('id'));
+  }
+
+  Future<int> deleteIncome(int id) async {
+    final db = await database;
+    return db.delete('incomes', where: 'id = ?', whereArgs: [id]);
   }
 }
