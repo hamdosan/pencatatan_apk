@@ -1,3 +1,16 @@
+/// Metode pembayaran pengeluaran. [name] disimpan di DB.
+enum PaymentMethod {
+  cash('Cash'),
+  qr('QR'),
+  tf('TF');
+
+  const PaymentMethod(this.label);
+  final String label;
+
+  static PaymentMethod fromDb(String? v) => PaymentMethod.values
+      .firstWhere((m) => m.name == v, orElse: () => PaymentMethod.cash);
+}
+
 /// Model pengeluaran.
 class Expense {
   final int? id;
@@ -16,6 +29,8 @@ class Expense {
   /// Alamat hasil reverse geocoding (opsional, bisa null walau ada koordinat).
   final String? address;
 
+  final PaymentMethod paymentMethod;
+
   const Expense({
     this.id,
     required this.title,
@@ -26,6 +41,7 @@ class Expense {
     this.latitude,
     this.longitude,
     this.address,
+    this.paymentMethod = PaymentMethod.cash,
   });
 
   bool get hasLocation => latitude != null && longitude != null;
@@ -40,6 +56,7 @@ class Expense {
     double? latitude,
     double? longitude,
     String? address,
+    PaymentMethod? paymentMethod,
   }) =>
       Expense(
         id: id ?? this.id,
@@ -51,11 +68,11 @@ class Expense {
         latitude: latitude ?? this.latitude,
         longitude: longitude ?? this.longitude,
         address: address ?? this.address,
+        paymentMethod: paymentMethod ?? this.paymentMethod,
       );
 
   /// Tanggal disimpan sebagai teks 'yyyy-MM-dd' agar mudah difilter per bulan.
-  static String dateToDb(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
+  static String dateToDb(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 
@@ -69,6 +86,7 @@ class Expense {
         'latitude': latitude,
         'longitude': longitude,
         'address': address,
+        'payment_method': paymentMethod.name,
       };
 
   factory Expense.fromMap(Map<String, Object?> map) => Expense(
@@ -81,5 +99,6 @@ class Expense {
         latitude: (map['latitude'] as num?)?.toDouble(),
         longitude: (map['longitude'] as num?)?.toDouble(),
         address: map['address'] as String?,
+        paymentMethod: PaymentMethod.fromDb(map['payment_method'] as String?),
       );
 }

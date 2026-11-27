@@ -10,6 +10,7 @@ import 'widgets/expense_tile.dart';
 import 'widgets/glass.dart';
 import 'widgets/formatters.dart';
 import 'widgets/month_selector.dart';
+import '../l10n/l10n.dart';
 
 /// Tab "Pencatatan": ringkasan + daftar pengeluaran bulan terpilih.
 /// Scaffold (AppBar, FAB, navigasi) disediakan oleh MainShell.
@@ -40,9 +41,9 @@ class RecordsPage extends StatelessWidget {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (c.expenses.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(child: Text('Belum ada pengeluaran bulan ini')),
+              child: Center(child: Text(tr('noExpensesThisMonth'))),
             )
           else
             SliverList.builder(
@@ -89,7 +90,7 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Total pengeluaran',
+          Text(tr('totalExpense'),
               style: theme.textTheme.labelLarge
                   ?.copyWith(color: AppPalette.of(context).muted)),
           const SizedBox(height: 4),
@@ -112,8 +113,7 @@ class _SummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text('Lihat riwayat bulan ini',
-                  style: theme.textTheme.labelMedium),
+              Text(tr('seeMonthHistory'), style: theme.textTheme.labelMedium),
               const Icon(Icons.chevron_right, size: 18),
             ],
           ),
@@ -150,7 +150,7 @@ class _CategoryBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(cat?.name ?? '-'),
+              Text(cat?.displayName ?? '-'),
               Text(formatRupiah(amount)),
             ],
           ),

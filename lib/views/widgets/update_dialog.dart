@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:ota_update/ota_update.dart';
 
 import '../../services/update_service.dart';
+import '../../l10n/l10n.dart';
 
 /// Tampilkan dialog cek & pasang update.
 ///
@@ -106,13 +107,13 @@ class _UpdateDialogState extends State<_UpdateDialog> {
             case OtaStatus.INSTALLATION_DONE:
               _stage = _Stage.installing;
             case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
-              _error = 'Izin "Instal aplikasi tidak dikenal" belum diberikan. '
-                  'Aktifkan di pengaturan lalu coba lagi.';
+              _error = tr('installPermission');
               _stage = _Stage.error;
             case OtaStatus.CANCELED:
               _stage = _Stage.available;
             default:
-              _error = 'Gagal update: ${event.status.name} ${event.value ?? ''}';
+              _error = tr('updateFailed',
+                  {'e': '${event.status.name} ${event.value ?? ''}'});
               _stage = _Stage.error;
           }
         });
@@ -120,7 +121,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       onError: (Object e) {
         if (!mounted) return;
         setState(() {
-          _error = 'Gagal update: $e';
+          _error = tr('updateFailed', {'e': e});
           _stage = _Stage.error;
         });
       },
@@ -132,17 +133,18 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     final busy = _stage == _Stage.checking || _stage == _Stage.downloading;
 
     final Widget content = switch (_stage) {
-      _Stage.checking => const _Busy(text: 'Mengecek versi terbaru...'),
-      _Stage.upToDate => Text('Aplikasi sudah versi terbaru ($_current).'),
+      _Stage.checking => _Busy(text: tr('checkingVersion')),
+      _Stage.upToDate => Text(tr('upToDate', {'v': _current})),
       _Stage.available => Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Versi baru tersedia: ${_release!.version}\n'
-                'Versi terpasang: $_current'),
+            Text('${tr('newVersion', {'v': _release!.version})}\n'
+                '${tr('installedVersion', {'v': _current})}'),
             if (_release!.notes.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Text('Perubahan:', style: Theme.of(context).textTheme.labelLarge),
+              Text(tr('changes'),
+                  style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 4),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 200),
@@ -151,7 +153,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
             ],
             const SizedBox(height: 12),
             Text(
-              'Data catatan tidak akan hilang.',
+              tr('dataSafe'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -161,44 +163,55 @@ class _UpdateDialogState extends State<_UpdateDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_progress == null
-                ? 'Mengunduh...'
-                : 'Mengunduh ${(_progress! * 100).round()}%'),
+                ? tr('downloading')
+                : tr('downloadingP', {'p': (_progress! * 100).round()})),
             const SizedBox(height: 12),
             LinearProgressIndicator(value: _progress),
           ],
         ),
-      _Stage.installing =>
-        const Text('Unduhan selesai. Ikuti layar pemasangan Android.'),
-      _Stage.error => Text(_error ?? 'Terjadi kesalahan.'),
+      _Stage.installing => Text(tr('downloadDone')),
+      _Stage.error => Text(_error ?? tr('errorOccurred')),
     };
 
     return PopScope(
       canPop: !busy,
       child: AlertDialog(
-        title: const Text('Update Aplikasi'),
+        title: Text(tr('updateTitle')),
         content: AnimatedSize(
           duration: const Duration(milliseconds: 200),
           child: content,
         ),
+        // Tombol utama di atas (lebar penuh), Tutup/Nanti di bawah, di tengah.
         actions: [
-          if (_isAuto && _stage == _Stage.available)
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Lewati versi ini'),
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_stage == _Stage.error)
+                  FilledButton(onPressed: _check, child: Text(tr('retry'))),
+                if (_stage == _Stage.available)
+                  FilledButton.icon(
+                    onPressed: _install,
+                    icon: const Icon(Icons.system_update),
+                    label: Text(tr('update')),
+                  ),
+                if (_isAuto && _stage == _Stage.available)
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(tr('skipVersion')),
+                  ),
+                if (!busy)
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      _stage == _Stage.available ? tr('later') : tr('close'),
+                    ),
+                  ),
+              ],
             ),
-          if (!busy)
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(_stage == _Stage.available ? 'Nanti' : 'Tutup'),
-            ),
-          if (_stage == _Stage.error)
-            FilledButton(onPressed: _check, child: const Text('Coba lagi')),
-          if (_stage == _Stage.available)
-            FilledButton.icon(
-              onPressed: _install,
-              icon: const Icon(Icons.system_update),
-              label: const Text('Update'),
-            ),
+          ),
         ],
       ),
     );

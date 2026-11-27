@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../controllers/expense_controller.dart';
 import '../theme/app_theme.dart';
+import '../../l10n/l10n.dart';
 
 /// Tahun paling awal yang bisa dipilih.
 const kFirstYear = 2000;
@@ -55,7 +56,7 @@ class MonthSelector extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left),
-            tooltip: 'Bulan sebelumnya',
+            tooltip: tr('prevMonth'),
             onPressed: selected.year <= kFirstYear && selected.month == 1
                 ? null
                 : () => controller.changeMonth(-1),
@@ -64,14 +65,14 @@ class MonthSelector extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _PickerChip(
-                label: DateFormat('MMMM', 'id_ID').format(selected),
-                tooltip: 'Pilih bulan',
+                label: DateFormat('MMMM', L10n.intlLocale).format(selected),
+                tooltip: tr('pickMonth'),
                 style: style,
                 onTap: () => _pickMonth(context),
               ),
               _PickerChip(
                 label: '${selected.year}',
-                tooltip: 'Pilih tahun',
+                tooltip: tr('pickYear'),
                 style: style,
                 onTap: () => _pickYear(context),
               ),
@@ -79,9 +80,10 @@ class MonthSelector extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            tooltip: 'Bulan berikutnya',
-            onPressed:
-                controller.isCurrentMonth ? null : () => controller.changeMonth(1),
+            tooltip: tr('nextMonth'),
+            onPressed: controller.isCurrentMonth
+                ? null
+                : () => controller.changeMonth(1),
           ),
         ],
       ),
@@ -137,7 +139,7 @@ class _MonthPickerDialog extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return AlertDialog(
-      title: Text('Pilih bulan ($year)'),
+      title: Text(tr('pickMonthOfYear', {'y': year})),
       contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       content: SizedBox(
         width: 320,
@@ -153,8 +155,8 @@ class _MonthPickerDialog extends StatelessWidget {
                 final enabled = DateTime(year, m)
                     .isBefore(DateTime(now.year, now.month + 1));
                 final isSelected = m == selectedMonth;
-                final label =
-                    DateFormat('MMM', 'id_ID').format(DateTime(year, m));
+                final label = DateFormat('MMM', L10n.intlLocale)
+                    .format(DateTime(year, m));
                 return isSelected
                     ? FilledButton(
                         onPressed: () => Navigator.pop(context, m),
@@ -175,7 +177,7 @@ class _MonthPickerDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Batal'),
+          child: Text(tr('cancel')),
         ),
       ],
     );
@@ -190,7 +192,7 @@ class _YearPickerDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     return AlertDialog(
-      title: const Text('Pilih tahun'),
+      title: Text(tr('pickYear')),
       contentPadding: const EdgeInsets.only(top: 16),
       content: SizedBox(
         width: 320,
@@ -205,7 +207,7 @@ class _YearPickerDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Batal'),
+          child: Text(tr('cancel')),
         ),
       ],
     );

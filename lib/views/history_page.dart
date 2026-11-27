@@ -7,6 +7,7 @@ import 'widgets/category_dropdown.dart';
 import 'widgets/expense_tile.dart';
 import 'widgets/formatters.dart';
 import 'widgets/glass.dart';
+import '../l10n/l10n.dart';
 
 /// Riwayat pengeluaran pada bulan yang dipilih di halaman utama,
 /// dengan filter per kategori.
@@ -32,43 +33,44 @@ class _HistoryPageState extends State<HistoryPage> {
     return AppBackground(
         ambient: true,
         child: Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Text('Riwayat ${formatMonth(controller.selectedMonth)}'),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: CategoryDropdown(
-              categories: controller.categories,
-              value: _categoryId,
-              allOption: 'Semua kategori',
-              onChanged: (v) => setState(() => _categoryId = v),
-            ),
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(tr('historyTitle',
+                {'month': formatMonth(controller.selectedMonth)})),
           ),
-          Expanded(
-            child: expenses.isEmpty
-                ? const Center(child: Text('Belum ada pengeluaran'))
-                : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: expenses.length,
-                    itemBuilder: (context, i) {
-                      final e = expenses[i];
-                      return ExpenseTile(
-                        expense: e,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ExpenseFormPage(expense: e),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: CategoryDropdown(
+                  categories: controller.categories,
+                  value: _categoryId,
+                  allOption: tr('allCategories'),
+                  onChanged: (v) => setState(() => _categoryId = v),
+                ),
+              ),
+              Expanded(
+                child: expenses.isEmpty
+                    ? Center(child: Text(tr('noExpenses')))
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: expenses.length,
+                        itemBuilder: (context, i) {
+                          final e = expenses[i];
+                          return ExpenseTile(
+                            expense: e,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ExpenseFormPage(expense: e),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ));
+        ));
   }
 }

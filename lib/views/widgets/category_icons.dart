@@ -4,6 +4,7 @@ const Map<String, IconData> categoryIcons = {
   'food': Icons.restaurant,
   'transport': Icons.directions_car,
   'qr': Icons.qr_code_2,
+  'drink': Icons.local_drink,
   'admin_fee': Icons.account_balance,
   'game': Icons.sports_esports,
   'education': Icons.school,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/category.dart';
 import 'category_icons.dart';
+import '../../l10n/l10n.dart';
 
 /// Pilihan kategori yang membuka daftar secara animasi di bawah field.
 /// Maksimal [_visibleItems] item terlihat, sisanya di-scroll.
@@ -65,7 +66,8 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
         children: [
           Icon(iconFor(cat.icon), color: Color(cat.colorValue), size: 20),
           const SizedBox(width: 12),
-          Expanded(child: Text(cat.name, overflow: TextOverflow.ellipsis)),
+          Expanded(
+              child: Text(cat.displayName, overflow: TextOverflow.ellipsis)),
         ],
       );
 
@@ -103,7 +105,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
               onTap: () => _select(field, cat?.id),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 color: cat?.id == field.value
                     ? colors.primaryContainer.withValues(alpha: 0.5)
                     : null,
@@ -132,7 +134,7 @@ class _CategoryDropdownState extends State<CategoryDropdown> {
                 isEmpty: selected == null && widget.allOption == null,
                 isFocused: _open,
                 decoration: InputDecoration(
-                  labelText: 'Kategori',
+                  labelText: tr('category'),
                   errorText: field.errorText,
                   suffixIcon: AnimatedRotation(
                     turns: _open ? 0.5 : 0,

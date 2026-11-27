@@ -7,19 +7,19 @@ Category _category(String name) =>
 
 void main() {
   test('urutan DB hasil migrasi mengikuti urutan tampilan', () {
-    // Urutan id pada DB yang dimigrasi dari v1 ke v3.
+    // Urutan id pada DB yang dimigrasi dari v1 ke v3 (nama setelah v6).
     const migrated = [
       'Makanan',
       'Transportasi',
-      'Belanja',
+      'Shopee',
       'Tagihan',
       'Hiburan',
       'Kesehatan',
       'Pendidikan',
       'Lainnya',
-      'QR',
+      'Minum',
       'Biaya Admin',
-      'Game',
+      'Top-Up',
     ];
 
     final sorted = DatabaseHelper.inDisplayOrder(migrated.map(_category));
@@ -27,10 +27,10 @@ void main() {
     expect(sorted.map((c) => c.name), [
       'Makanan',
       'Transportasi',
-      'QR',
+      'Minum',
       'Biaya Admin',
-      'Game',
-      'Belanja',
+      'Top-Up',
+      'Shopee',
       'Tagihan',
       'Hiburan',
       'Kesehatan',

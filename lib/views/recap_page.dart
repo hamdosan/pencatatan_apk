@@ -8,6 +8,7 @@ import 'history_page.dart';
 import 'widgets/formatters.dart';
 import 'widgets/month_selector.dart' show kFirstYear;
 import 'widgets/glass.dart';
+import '../l10n/l10n.dart';
 
 /// Rekap pencatatan per bulan dalam satu tahun.
 class RecapPage extends StatefulWidget {
@@ -102,18 +103,19 @@ class _RecapPageState extends State<RecapPage> {
       );
       final name = ExcelExportService.fileName(_year, months);
       final uri = await FilePicker.saveFile(
-        dialogTitle: 'Simpan rekap Excel',
+        dialogTitle: tr('saveExcelDialog'),
         fileName: name,
         bytes: bytes,
         mimeType:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
       if (uri != null) {
-        messenger.showSnackBar(SnackBar(content: Text('$name tersimpan')));
+        messenger.showSnackBar(
+            SnackBar(content: Text(tr('savedFile', {'name': name}))));
       }
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Gagal membuat Excel: $e')),
+        SnackBar(content: Text(tr('excelFailed', {'e': e}))),
       );
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -129,7 +131,7 @@ class _RecapPageState extends State<RecapPage> {
         child: Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Rekap Bulanan'),
+        title: Text(tr('navRecap')),
         actions: [
           _exporting
               ? const Padding(
@@ -141,7 +143,7 @@ class _RecapPageState extends State<RecapPage> {
                 )
               : IconButton(
                   icon: const Icon(Icons.download),
-                  tooltip: 'Download Excel',
+                  tooltip: tr('downloadExcel'),
                   onPressed: _chooseMonthsAndDownload,
                 ),
         ],
@@ -155,13 +157,13 @@ class _RecapPageState extends State<RecapPage> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.chevron_left),
-                  tooltip: 'Tahun sebelumnya',
+                  tooltip: tr('prevYear'),
                   onPressed: _year <= kFirstYear ? null : () => _changeYear(-1),
                 ),
                 Text('$_year', style: theme.textTheme.titleMedium),
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
-                  tooltip: 'Tahun berikutnya',
+                  tooltip: tr('nextYear'),
                   onPressed: _year >= now.year ? null : () => _changeYear(1),
                 ),
               ],
@@ -173,7 +175,7 @@ class _RecapPageState extends State<RecapPage> {
               builder: (context, snap) {
                 if (snap.hasError) {
                   return Center(
-                      child: Text('Gagal memuat rekap: ${snap.error}'));
+                      child: Text(tr('recapLoadFailed', {'e': snap.error})));
                 }
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -198,7 +200,7 @@ class _RecapPageState extends State<RecapPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Total tahun $_year',
+                            Text(tr('yearTotal', {'y': _year}),
                                 style: theme.textTheme.labelLarge),
                             const SizedBox(height: 4),
                             Text(
@@ -207,7 +209,7 @@ class _RecapPageState extends State<RecapPage> {
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 4),
-                            Text('$yearCount transaksi',
+                            Text(tr('nTransactions', {'n': yearCount}),
                                 style: theme.textTheme.bodySmall),
                           ],
                         ),
@@ -260,7 +262,7 @@ class _MonthRecapTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+          padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 8, 12),
           child: Row(
             children: [
               Expanded(
@@ -295,15 +297,17 @@ class _MonthRecapTile extends StatelessWidget {
                         Expanded(
                           child: Text(
                             recap.count == 0
-                                ? 'Belum ada catatan'
-                                : '${recap.count} transaksi',
+                                ? tr('noRecords')
+                                : tr('nTransactions', {'n': recap.count}),
                             style: theme.textTheme.bodySmall,
                           ),
                         ),
                         if (change != null && recap.total > 0)
                           Text(
                             '${change >= 0 ? '▲' : '▼'} '
-                            '${change.abs().toStringAsFixed(0)}% vs bln lalu',
+                            '${tr('vsLastMonth', {
+                                  'p': change.abs().toStringAsFixed(0)
+                                })}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               // Pengeluaran naik = merah, turun = hijau.
                               color: change > 0
@@ -319,7 +323,8 @@ class _MonthRecapTile extends StatelessWidget {
               if (onDownload != null)
                 IconButton(
                   icon: const Icon(Icons.file_download_outlined),
-                  tooltip: 'Download Excel ${formatMonth(recap.month)}',
+                  tooltip: tr('downloadExcelMonth',
+                      {'month': formatMonth(recap.month)}),
                   onPressed: onDownload,
                 )
               else
@@ -380,11 +385,11 @@ class _MonthExportSheetState extends State<_MonthExportSheet> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-              child: Text('Pilih bulan untuk diunduh (${widget.year})',
+              child: Text(tr('pickMonthsDownload', {'y': widget.year}),
                   style: theme.textTheme.titleMedium),
             ),
             CheckboxListTile(
-              title: const Text('Pilih semua'),
+              title: Text(tr('selectAll')),
               value: allSelected,
               onChanged: withData.isEmpty
                   ? null
@@ -403,8 +408,9 @@ class _MonthExportSheetState extends State<_MonthExportSheet> {
                     CheckboxListTile(
                       title: Text(formatMonth(r.month)),
                       subtitle: Text(r.count == 0
-                          ? 'Belum ada catatan'
-                          : '${r.count} transaksi · ${formatRupiah(r.total)}'),
+                          ? tr('noRecords')
+                          : tr('monthRow',
+                              {'n': r.count, 'amount': formatRupiah(r.total)})),
                       value: _selected.contains(r.month.month),
                       onChanged: r.count == 0
                           ? null
@@ -425,8 +431,8 @@ class _MonthExportSheetState extends State<_MonthExportSheet> {
                     : () => Navigator.pop(context, _selected),
                 icon: const Icon(Icons.download),
                 label: Text(_selected.isEmpty
-                    ? 'Pilih minimal 1 bulan'
-                    : 'Download ${_selected.length} bulan'),
+                    ? tr('pickAtLeastOne')
+                    : tr('downloadNMonths', {'n': _selected.length})),
               ),
             ),
           ],

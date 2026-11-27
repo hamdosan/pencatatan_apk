@@ -5,6 +5,7 @@ import 'package:ota_update/ota_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../config/update_config.dart';
+import '../l10n/l10n.dart';
 
 /// Info rilis terbaru di GitHub Releases.
 class AppRelease {
@@ -42,8 +43,7 @@ class UpdateService {
 
   Future<AppRelease> fetchLatest() async {
     if (!isUpdateConfigured) {
-      throw const UpdateException(
-          'Sumber update belum diatur (lib/config/update_config.dart).');
+      throw UpdateException(tr('updateNoSource'));
     }
     final uri = Uri.https('api.github.com',
         '/repos/$kUpdateRepoOwner/$kUpdateRepoName/releases/latest');
@@ -53,14 +53,13 @@ class UpdateService {
         'Accept': 'application/vnd.github+json',
       }).timeout(const Duration(seconds: 15));
     } catch (_) {
-      throw const UpdateException(
-          'Tidak bisa terhubung. Periksa koneksi internet.');
+      throw UpdateException(tr('updateNoConnection'));
     }
     if (res.statusCode == 404) {
-      throw const UpdateException('Belum ada rilis yang dipublikasikan.');
+      throw UpdateException(tr('updateNoRelease'));
     }
     if (res.statusCode != 200) {
-      throw UpdateException('Gagal cek update (HTTP ${res.statusCode}).');
+      throw UpdateException(tr('updateHttpFailed', {'code': res.statusCode}));
     }
 
     final json = jsonDecode(res.body) as Map<String, dynamic>;
@@ -68,11 +67,11 @@ class UpdateService {
     final apk = assets.where(
         (a) => (a['name'] as String? ?? '').toLowerCase().endsWith('.apk'));
     if (apk.isEmpty) {
-      throw const UpdateException('Rilis terbaru tidak berisi file APK.');
+      throw UpdateException(tr('updateNoApk'));
     }
     return AppRelease(
-      version: (json['tag_name'] as String? ?? '').replaceFirst(
-          RegExp(r'^v', caseSensitive: false), ''),
+      version: (json['tag_name'] as String? ?? '')
+          .replaceFirst(RegExp(r'^v', caseSensitive: false), ''),
       apkUrl: apk.first['browser_download_url'] as String,
       notes: (json['body'] as String? ?? '').trim(),
     );

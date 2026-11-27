@@ -4,6 +4,7 @@ import '../database/database_helper.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 import '../services/reminder_service.dart';
+import '../l10n/l10n.dart';
 
 /// Ringkasan satu bulan untuk halaman rekap.
 class MonthRecap {
@@ -61,10 +62,18 @@ class ExpenseController extends ChangeNotifier {
     return list;
   }
 
+  /// Total per metode pembayaran bulan terpilih (urutan enum, termasuk 0).
+  Map<PaymentMethod, int> get totalByPayment {
+    final map = {for (final m in PaymentMethod.values) m: 0};
+    for (final e in _expenses) {
+      map[e.paymentMethod] = map[e.paymentMethod]! + e.amount;
+    }
+    return map;
+  }
+
   /// Total per tanggal pada bulan terpilih. Index 0 = tanggal 1.
   List<int> get dailyTotals {
-    final days =
-        DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
+    final days = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
     final list = List<int>.filled(days, 0);
     for (final e in _expenses) {
       list[e.date.day - 1] += e.amount;
@@ -79,8 +88,8 @@ class ExpenseController extends ChangeNotifier {
   static const trendMonths = 6;
 
   Future<void> _loadTrend() async {
-    final from = DateTime(
-        _selectedMonth.year, _selectedMonth.month - (trendMonths - 1));
+    final from =
+        DateTime(_selectedMonth.year, _selectedMonth.month - (trendMonths - 1));
     final to = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
     final totals = await _db.getMonthlyTotals(from, to);
     _trend = [
@@ -130,7 +139,7 @@ class ExpenseController extends ChangeNotifier {
       _categories = await _db.getCategories();
       await loadExpenses();
     } catch (e) {
-      _error = 'Gagal memuat data: $e';
+      _error = tr('loadDataFailed', {'e': e});
       _loading = false;
       notifyListeners();
     }
@@ -147,7 +156,7 @@ class ExpenseController extends ChangeNotifier {
       );
       await _loadTrend();
     } catch (e) {
-      _error = 'Gagal memuat pengeluaran: $e';
+      _error = tr('loadExpensesFailed', {'e': e});
     }
     _loading = false;
     notifyListeners();

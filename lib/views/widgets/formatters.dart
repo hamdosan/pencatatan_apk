@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/l10n.dart';
 
 final _rupiah = NumberFormat.currency(
   locale: 'id_ID',
@@ -9,9 +10,11 @@ final _rupiah = NumberFormat.currency(
 
 String formatRupiah(num value) => _rupiah.format(value);
 
-String formatDate(DateTime d) => DateFormat('EEE, d MMM y', 'id_ID').format(d);
+String formatDate(DateTime d) =>
+    DateFormat('EEE, d MMM y', L10n.intlLocale).format(d);
 
-String formatMonth(DateTime d) => DateFormat('MMMM y', 'id_ID').format(d);
+String formatMonth(DateTime d) =>
+    DateFormat('MMMM y', L10n.intlLocale).format(d);
 
 final _nonDigit = RegExp(r'\D');
 
@@ -48,9 +51,8 @@ class ThousandsInputFormatter extends TextInputFormatter {
 
     final digitsAfterCursor =
         text.substring(cursor).replaceAll(_nonDigit, '').length;
-    final digits = text
-        .replaceAll(_nonDigit, '')
-        .replaceFirst(RegExp(r'^0+(?=\d)'), '');
+    final digits =
+        text.replaceAll(_nonDigit, '').replaceFirst(RegExp(r'^0+(?=\d)'), '');
     final formatted = groupThousands(digits);
 
     var offset = formatted.length;

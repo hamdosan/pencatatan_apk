@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import 'category_icons.dart';
 import 'delete_dialog.dart';
 import 'formatters.dart';
+import '../../l10n/l10n.dart';
 
 class ExpenseTile extends StatelessWidget {
   const ExpenseTile({super.key, required this.expense, required this.onTap});
@@ -32,15 +33,16 @@ class ExpenseTile extends StatelessWidget {
             color: Theme.of(context).colorScheme.error,
             borderRadius: radius,
           ),
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
+          alignment: AlignmentDirectional.centerEnd,
+          padding: const EdgeInsetsDirectional.only(end: 20),
           child: const Icon(Icons.delete, color: Colors.white),
         ),
-        confirmDismiss: (_) => confirmDeleteExpense(context, expense.title),
+        confirmDismiss: (_) =>
+            confirmDeleteExpense(context, cat?.displayName ?? tr('expense')),
         onDismissed: (_) {
           controller.deleteExpense(expense.id!);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pengeluaran dihapus')),
+            SnackBar(content: Text(tr('expenseDeleted'))),
           );
         },
         child: Material(
@@ -80,7 +82,7 @@ class ExpenseTile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            expense.title,
+                            cat?.displayName ?? '-',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: text.titleSmall?.copyWith(
@@ -92,7 +94,7 @@ class ExpenseTile extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  '${cat?.name ?? '-'} • ${formatDate(expense.date)}',
+                                  formatDate(expense.date),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: text.bodySmall?.copyWith(

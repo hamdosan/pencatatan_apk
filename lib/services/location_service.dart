@@ -1,7 +1,7 @@
-import 'package:flutter/widgets.dart' show Locale;
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/l10n.dart';
 
 /// Hasil pengambilan lokasi.
 class PickedLocation {
@@ -29,14 +29,14 @@ class LocationService {
   LocationService._();
   static final LocationService instance = LocationService._();
 
-  late final Geocoding _geocoding = Geocoding(locale: const Locale('id', 'ID'));
+  /// Alamat mengikuti bahasa aplikasi.
+  Geocoding get _geocoding => Geocoding(locale: L10n.current.locale);
 
   /// Ambil posisi saat ini beserta alamatnya. Melempar [LocationException]
   /// jika GPS mati atau izin ditolak.
   Future<PickedLocation> getCurrentLocation() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
-      throw const LocationException(
-          'GPS tidak aktif. Nyalakan lokasi di pengaturan HP.');
+      throw LocationException(tr('gpsOff'));
     }
 
     var permission = await Geolocator.checkPermission();
@@ -44,11 +44,10 @@ class LocationService {
       permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.denied) {
-      throw const LocationException('Izin lokasi ditolak.');
+      throw LocationException(tr('locationDenied'));
     }
     if (permission == LocationPermission.deniedForever) {
-      throw const LocationException(
-          'Izin lokasi ditolak permanen. Aktifkan di pengaturan aplikasi.');
+      throw LocationException(tr('locationDeniedForever'));
     }
 
     final Position pos;
@@ -62,8 +61,7 @@ class LocationService {
     } catch (_) {
       final last = await Geolocator.getLastKnownPosition();
       if (last == null) {
-        throw const LocationException(
-            'Gagal mendapatkan lokasi. Coba lagi di tempat terbuka.');
+        throw LocationException(tr('locationUnavailable'));
       }
       return _withAddress(last.latitude, last.longitude);
     }

@@ -15,6 +15,7 @@ import 'widgets/expense_tile.dart';
 import 'widgets/formatters.dart';
 import 'widgets/glass.dart';
 import 'widgets/month_selector.dart';
+import '../l10n/l10n.dart';
 
 const _chartAnim = Duration(milliseconds: 450);
 const _chartCurve = Curves.easeOutCubic;
@@ -44,18 +45,30 @@ class DashboardPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: _TrendLineChart(controller: c),
           ),
-          const SectionHeader(
-            title: 'Per kategori',
-            padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
+          SectionHeader(
+            title: tr('byCategory'),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
           ),
           _CategoryTiles(controller: c),
+          GlassCard(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SectionHeader(title: tr('byPayment')),
+                const SizedBox(height: 16),
+                _PaymentPieChart(controller: c),
+              ],
+            ),
+          ),
           GlassCard(
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader(title: 'Pengeluaran harian'),
+                SectionHeader(title: tr('dailyExpense')),
                 const SizedBox(height: 16),
                 _DailyBarChart(controller: c),
               ],
@@ -72,13 +85,21 @@ class DashboardPage extends StatelessWidget {
 }
 
 /// Sapaan di kiri + kartu total bulan ini di kanan.
-class _Hero extends StatelessWidget {
+class _Hero extends StatefulWidget {
   const _Hero({required this.controller});
   final ExpenseController controller;
 
   @override
+  State<_Hero> createState() => _HeroState();
+}
+
+class _HeroState extends State<_Hero> {
+  /// Nominal total disembunyikan sampai kartu diketuk.
+  bool _hidden = true;
+
+  @override
   Widget build(BuildContext context) {
-    final c = controller;
+    final c = widget.controller;
     final p = AppPalette.of(context);
     final text = Theme.of(context).textTheme;
     final trend = c.monthlyTrend;
@@ -87,7 +108,7 @@ class _Hero extends StatelessWidget {
     final up = (change ?? 0) > 0;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 16, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -103,9 +124,9 @@ class _Hero extends StatelessWidget {
                 const SizedBox(height: 6),
                 FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
-                    'Yuk, lihat\npengeluaranmu',
+                    tr('heroTitle'),
                     style: text.titleLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.3,
@@ -121,6 +142,7 @@ class _Hero extends StatelessWidget {
             child: GlassCard(
               radius: 22,
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              onTap: () => setState(() => _hidden = !_hidden),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -136,25 +158,61 @@ class _Hero extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Total\n${DateFormat('MMMM', 'id_ID').format(c.selectedMonth)}',
+                          tr('totalMonth', {
+                            'month': DateFormat('MMMM', L10n.intlLocale)
+                                .format(c.selectedMonth)
+                          }),
                           style: text.labelMedium?.copyWith(
                             color: p.muted,
                             height: 1.3,
                           ),
                         ),
                       ),
-                      Icon(Icons.account_balance_wallet_outlined,
-                          size: 22, color: p.muted),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        transitionBuilder: (child, anim) => RotationTransition(
+                          turns: Tween(begin: 0.75, end: 1.0).animate(anim),
+                          child: FadeTransition(opacity: anim, child: child),
+                        ),
+                        child: Icon(
+                          _hidden
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          key: ValueKey(_hidden),
+                          size: 22,
+                          color: p.muted,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      formatRupiah(c.totalAmount),
-                      style: text.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    layoutBuilder: (current, previous) => Stack(
+                      alignment: AlignmentDirectional.centerStart,
+                      children: [...previous, if (current != null) current],
+                    ),
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween(
+                          begin: const Offset(0, 0.4),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
+                      ),
+                    ),
+                    child: FittedBox(
+                      key: ValueKey(_hidden),
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        _hidden ? 'Rp ••••••' : formatRupiah(c.totalAmount),
+                        style: text.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -172,7 +230,8 @@ class _Hero extends StatelessWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            '${change.abs().toStringAsFixed(0)}% vs bln lalu',
+                            tr('vsLastMonth',
+                                {'p': change.abs().toStringAsFixed(0)}),
                             style: text.labelSmall?.copyWith(color: p.muted),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -181,7 +240,7 @@ class _Hero extends StatelessWidget {
                     )
                   else
                     Text(
-                      '${c.expenses.length} transaksi',
+                      tr('nTransactions', {'n': c.expenses.length}),
                       style: text.labelSmall?.copyWith(color: p.muted),
                     ),
                 ],
@@ -195,10 +254,10 @@ class _Hero extends StatelessWidget {
 
   static String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 11) return 'Selamat pagi!';
-    if (h < 15) return 'Selamat siang!';
-    if (h < 19) return 'Selamat sore!';
-    return 'Selamat malam!';
+    if (h < 11) return tr('morning');
+    if (h < 15) return tr('afternoon');
+    if (h < 19) return tr('evening');
+    return tr('night');
   }
 }
 
@@ -247,7 +306,7 @@ class _StatRow extends StatelessWidget {
                       ),
                       FittedBox(
                         fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
+                        alignment: AlignmentDirectional.centerStart,
                         child: Text(
                           value,
                           style: text.titleSmall?.copyWith(
@@ -267,10 +326,10 @@ class _StatRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
         children: [
-          chip(Icons.receipt_long, 'Transaksi', '${c.expenses.length}',
+          chip(Icons.receipt_long, tr('transactions'), '${c.expenses.length}',
               flex: 4),
           const SizedBox(width: 12),
-          chip(Icons.today, 'Rata-rata / hari', formatRupiah(avg), flex: 6),
+          chip(Icons.today, tr('avgPerDay'), formatRupiah(avg), flex: 6),
         ],
       ),
     );
@@ -286,7 +345,7 @@ class _EmptyChart extends StatelessWidget {
         height: height,
         child: Center(
           child: Text(
-            'Belum ada data',
+            tr('noData'),
             style: TextStyle(color: AppPalette.of(context).muted),
           ),
         ),
@@ -296,9 +355,10 @@ class _EmptyChart extends StatelessWidget {
 /// Label ringkas: 1.500.000 -> 1,5jt; 25.000 -> 25rb.
 String _compact(num v) {
   if (v >= 1000000) {
-    return '${NumberFormat('#,##0.#', 'id_ID').format(v / 1000000)}jt';
+    return tr('compactMillion',
+        {'v': NumberFormat('#,##0.#', L10n.intlLocale).format(v / 1000000)});
   }
-  if (v >= 1000) return '${(v / 1000).round()}rb';
+  if (v >= 1000) return tr('compactThousand', {'v': (v / 1000).round()});
   return v.toStringAsFixed(0);
 }
 
@@ -331,7 +391,7 @@ class _TrendLineChart extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Tren ${ExpenseController.trendMonths} bulan',
+              tr('trendMonths', {'n': ExpenseController.trendMonths}),
               style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
@@ -425,7 +485,8 @@ class _TrendLineChart extends StatelessWidget {
                       return SideTitleWidget(
                         meta: meta,
                         child: Text(
-                          DateFormat('MMM', 'id_ID').format(trend[i].$1),
+                          DateFormat('MMM', L10n.intlLocale)
+                              .format(trend[i].$1),
                           style: labelStyle,
                         ),
                       );
@@ -474,7 +535,7 @@ class _TrendLineChart extends StatelessWidget {
                         children: [
                           TextSpan(
                             text:
-                                '\n${DateFormat('MMM y', 'id_ID').format(trend[s.x.toInt()].$1)}',
+                                '\n${DateFormat('MMM y', L10n.intlLocale).format(trend[s.x.toInt()].$1)}',
                             style: TextStyle(
                               color: p.muted,
                               fontWeight: FontWeight.w400,
@@ -566,7 +627,7 @@ class _CategoryTiles extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          cat?.name ?? '-',
+                          cat?.displayName ?? '-',
                           style: text.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -576,7 +637,7 @@ class _CategoryTiles extends StatelessWidget {
                         const SizedBox(height: 2),
                         FittedBox(
                           fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
+                          alignment: AlignmentDirectional.centerStart,
                           child: Text(
                             formatRupiah(entry.value),
                             style: text.bodyMedium?.copyWith(
@@ -689,7 +750,7 @@ class _CategoryExpensesSheet extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  cat?.name ?? '-',
+                                  cat?.displayName ?? '-',
                                   style: text.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -697,8 +758,10 @@ class _CategoryExpensesSheet extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 Text(
-                                  '${items.length} transaksi · '
-                                  '${(ratio * 100).round()}% bulan ini',
+                                  tr('categorySheetSub', {
+                                    'n': items.length,
+                                    'p': (ratio * 100).round()
+                                  }),
                                   style: text.bodySmall?.copyWith(
                                     color: p.muted,
                                   ),
@@ -725,7 +788,7 @@ class _CategoryExpensesSheet extends StatelessWidget {
                 hasScrollBody: false,
                 child: Center(
                   child: Text(
-                    'Belum ada pengeluaran di kategori ini.',
+                    tr('noCategoryExpense'),
                     style: text.bodyMedium?.copyWith(color: p.muted),
                   ),
                 ),
@@ -749,6 +812,100 @@ class _CategoryExpensesSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+const _paymentColors = {
+  PaymentMethod.cash: Color(0xFF43A047),
+  PaymentMethod.qr: Color(0xFF1E88E5),
+  PaymentMethod.tf: Color(0xFFFB8C00),
+};
+
+const _paymentIcons = {
+  PaymentMethod.cash: Icons.payments_outlined,
+  PaymentMethod.qr: Icons.qr_code_2,
+  PaymentMethod.tf: Icons.account_balance_outlined,
+};
+
+/// Donat porsi pengeluaran per metode pembayaran + legenda nominal.
+class _PaymentPieChart extends StatelessWidget {
+  const _PaymentPieChart({required this.controller});
+  final ExpenseController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final data = controller.totalByPayment;
+    final total = data.values.fold(0, (a, b) => a + b);
+    if (total == 0) return const _EmptyChart(height: 140);
+
+    final p = AppPalette.of(context);
+    final text = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 140,
+          height: 140,
+          child: PieChart(
+            duration: _chartAnim,
+            curve: _chartCurve,
+            PieChartData(
+              sectionsSpace: 2,
+              centerSpaceRadius: 38,
+              sections: [
+                for (final m in PaymentMethod.values)
+                  if (data[m]! > 0)
+                    PieChartSectionData(
+                      value: data[m]!.toDouble(),
+                      color: _paymentColors[m],
+                      radius: 26,
+                      title: '${(data[m]! / total * 100).round()}%',
+                      titleStyle: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            children: [
+              for (final m in PaymentMethod.values)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Icon(_paymentIcons[m],
+                          size: 18, color: _paymentColors[m]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(m.label, style: text.bodyMedium),
+                      ),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Text(
+                            formatRupiah(data[m]!),
+                            style: text.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: data[m] == 0 ? p.muted : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -829,7 +986,8 @@ class _DailyBarChart extends StatelessWidget {
               tooltipBorderRadius: BorderRadius.circular(12),
               getTooltipItem: (group, groupIndex, rod, rodIndex) =>
                   BarTooltipItem(
-                'Tgl ${group.x}\n${formatRupiah(rod.toY)}',
+                tr('tooltipDay',
+                    {'d': group.x, 'amount': formatRupiah(rod.toY)}),
                 TextStyle(color: scheme.onInverseSurface, fontSize: 12),
               ),
             ),
@@ -860,7 +1018,7 @@ class _LocationHistoryState extends State<_LocationHistory> {
         await LocationService.instance.openInMaps(e.latitude!, e.longitude!);
     if (!ok) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Tidak bisa membuka aplikasi peta')),
+        SnackBar(content: Text(tr('mapOpenFailed'))),
       );
     }
   }
@@ -874,8 +1032,8 @@ class _LocationHistoryState extends State<_LocationHistory> {
     final canExpand = items.length > _collapsedCount;
 
     final header = SectionHeader(
-      title: 'Riwayat lokasi',
-      action: canExpand ? (_expanded ? 'Ringkas' : 'Lihat semua') : null,
+      title: tr('locationHistory'),
+      action: canExpand ? (_expanded ? tr('collapse') : tr('seeAll')) : null,
       onAction: () => setState(() => _expanded = !_expanded),
     );
 
@@ -889,8 +1047,7 @@ class _LocationHistoryState extends State<_LocationHistory> {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'Belum ada pengeluaran dengan lokasi.\n'
-                'Tambahkan lokasi saat mencatat pengeluaran.',
+                tr('noLocation'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(color: muted),
               ),
@@ -921,15 +1078,15 @@ class _LocationHistoryState extends State<_LocationHistory> {
             Expanded(
               child: Text(
                 top.value > 1
-                    ? 'Tersering: ${top.key} (${top.value}x)'
-                    : 'Tempat & transaksi',
+                    ? tr('mostFrequent', {'place': top.key, 'n': top.value})
+                    : tr('placesTx'),
                 style: theme.textTheme.bodySmall?.copyWith(color: muted),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Text(
-              'Nominal',
+              tr('amount'),
               style: theme.textTheme.bodySmall?.copyWith(color: muted),
             ),
           ],
@@ -991,7 +1148,7 @@ class _LocationTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    e.title,
+                    cat?.displayName ?? '-',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleSmall?.copyWith(
@@ -1008,8 +1165,8 @@ class _LocationTile extends StatelessWidget {
                           place,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: muted),
+                          style:
+                              theme.textTheme.bodySmall?.copyWith(color: muted),
                         ),
                       ),
                     ],
@@ -1028,14 +1185,14 @@ class _LocationTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  DateFormat('d MMM', 'id_ID').format(e.date),
+                  DateFormat('d MMM', L10n.intlLocale).format(e.date),
                   style: theme.textTheme.labelSmall?.copyWith(color: muted),
                 ),
               ],
             ),
             IconButton(
               icon: const Icon(Icons.map_outlined, size: 20),
-              tooltip: 'Buka di peta',
+              tooltip: tr('openInMap'),
               visualDensity: VisualDensity.compact,
               onPressed: onMap,
             ),

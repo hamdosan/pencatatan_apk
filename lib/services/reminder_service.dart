@@ -1,3 +1,4 @@
+import '../l10n/l10n.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,16 +21,15 @@ class ReminderService {
       FlutterLocalNotificationsPlugin();
   bool _ready = false;
 
-  static const _details = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'daily_reminder',
-      'Pengingat Harian',
-      channelDescription:
-          'Pengingat jika belum mencatat pengeluaran selama 1 hari',
-      importance: Importance.high,
-      priority: Priority.high,
-    ),
-  );
+  static NotificationDetails get _details => NotificationDetails(
+        android: AndroidNotificationDetails(
+          'daily_reminder',
+          tr('reminderChannel'),
+          channelDescription: tr('reminderChannelDesc'),
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      );
 
   Future<void> init() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
@@ -55,6 +55,15 @@ class ReminderService {
     }
   }
 
+  /// Jadwalkan ulang dengan teks terbaru (mis. setelah ganti bahasa).
+  Future<void> reschedule() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastMs = prefs.getInt(_lastInputKey);
+    if (lastMs != null) {
+      await _schedule(DateTime.fromMillisecondsSinceEpoch(lastMs));
+    }
+  }
+
   /// Panggil setiap kali user menambah catatan pengeluaran.
   Future<void> markExpenseInput() async {
     final now = DateTime.now();
@@ -74,8 +83,8 @@ class ReminderService {
 
     await _plugin.zonedSchedule(
       id: _notificationId,
-      title: 'Jangan lupa catat pengeluaran',
-      body: 'Kamu belum mencatat pengeluaran selama 1 hari terakhir.',
+      title: tr('reminderTitle'),
+      body: tr('reminderBody'),
       scheduledDate: tz.TZDateTime.from(target.toUtc(), tz.UTC),
       notificationDetails: _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

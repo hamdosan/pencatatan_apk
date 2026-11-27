@@ -5,14 +5,17 @@ import 'package:provider/provider.dart';
 
 import '../controllers/theme_controller.dart';
 import '../services/auto_update_checker.dart';
+import '../services/cache_service.dart';
 import 'dashboard_page.dart';
 import 'expense_form_page.dart';
 import 'history_page.dart';
 import 'recap_page.dart';
 import 'records_page.dart';
+import 'settings_page.dart';
 import 'theme/app_theme.dart';
 import 'widgets/glass.dart';
 import 'widgets/update_dialog.dart';
+import '../l10n/l10n.dart';
 
 /// Kerangka utama: latar gradasi, judul besar, drawer menu, dan navigasi bawah
 /// berupa ikon (Home / Pencatatan) dengan tombol "+" di tengah.
@@ -38,12 +41,12 @@ class _MainShellState extends State<MainShell>
 
   int _index = 0;
 
-  static const _titles = ['Dashboard', 'Pencatatan'];
-  static const _tabs = [
-    _NavTab('Home', Icons.home_outlined, Icons.home_rounded),
-    _NavTab(
-        'Pencatatan', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
-  ];
+  List<String> get _titles => [tr('navDashboard'), tr('navRecords')];
+  List<_NavTab> get _tabs => [
+        _NavTab(tr('navHome'), Icons.home_outlined, Icons.home_rounded),
+        _NavTab(tr('navRecords'), Icons.receipt_long_outlined,
+            Icons.receipt_long_rounded),
+      ];
   static const _pages = [DashboardPage(), RecordsPage()];
 
   @override
@@ -88,8 +91,61 @@ class _MainShellState extends State<MainShell>
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const RecapPage()),
       );
-    } else {
+    } else if (i == _pages.length + 2) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const SettingsPage()),
+      );
+    } else if (i == _pages.length + 3) {
       showUpdateDialog(context);
+    } else {
+      _clearCache();
+    }
+  }
+
+  Future<void> _clearCache() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final size = await CacheService.size();
+    if (!mounted) return;
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(tr('cacheTitle')),
+            content: Text(
+              tr('cacheBody', {'size': CacheService.format(size)}),
+            ),
+            // Sama seperti dialog update: Bersihkan di atas, Batal di bawah.
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text(tr('cacheClear')),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: Text(tr('cancel')),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!ok) return;
+    try {
+      final freed = await CacheService.clear();
+      messenger.showSnackBar(SnackBar(
+        content: Text(tr('cacheDone', {'size': CacheService.format(freed)})),
+      ));
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(tr('cacheFailed', {'e': e}))),
+      );
     }
   }
 
@@ -115,7 +171,7 @@ class _MainShellState extends State<MainShell>
           appBar: AppBar(
             toolbarHeight: 72,
             leading: IconButton(
-              tooltip: 'Menu',
+              tooltip: tr('menu'),
               onPressed: _toggleDrawer,
               icon: AnimatedIcon(
                 icon: AnimatedIcons.menu_close,
@@ -136,7 +192,7 @@ class _MainShellState extends State<MainShell>
             actions: [
               GlassIconButton(
                 icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-                tooltip: isDark ? 'Mode terang' : 'Mode gelap',
+                tooltip: isDark ? tr('lightMode') : tr('darkMode'),
                 onPressed: () =>
                     context.read<ThemeController>().toggle(brightness),
               ),
@@ -148,40 +204,50 @@ class _MainShellState extends State<MainShell>
             onDestinationSelected: _onDrawerSelect,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(28, 24, 16, 16),
+                padding: const EdgeInsetsDirectional.fromSTEB(28, 24, 16, 16),
                 child: Text(
-                  'Catatan Pengeluaran',
+                  tr('appTitle'),
                   style:
                       text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
-              const NavigationDrawerDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: Text('Dashboard'),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.dashboard_outlined),
+                selectedIcon: const Icon(Icons.dashboard),
+                label: Text(tr('navDashboard')),
               ),
-              const NavigationDrawerDestination(
-                icon: Icon(Icons.receipt_long_outlined),
-                selectedIcon: Icon(Icons.receipt_long),
-                label: Text('Pencatatan'),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.receipt_long_outlined),
+                selectedIcon: const Icon(Icons.receipt_long),
+                label: Text(tr('navRecords')),
               ),
-              const NavigationDrawerDestination(
-                icon: Icon(Icons.history),
-                label: Text('Riwayat'),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.history),
+                label: Text(tr('navHistory')),
               ),
-              const NavigationDrawerDestination(
-                icon: Icon(Icons.calendar_view_month_outlined),
-                selectedIcon: Icon(Icons.calendar_view_month),
-                label: Text('Rekap Bulanan'),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.calendar_view_month_outlined),
+                selectedIcon: const Icon(Icons.calendar_view_month),
+                label: Text(tr('navRecap')),
+              ),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                label: Text(tr('navSettings')),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 28, vertical: 8),
                 child: Divider(),
               ),
-              const NavigationDrawerDestination(
-                icon: Icon(Icons.system_update_outlined),
-                selectedIcon: Icon(Icons.system_update),
-                label: Text('Cek Update'),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.system_update_outlined),
+                selectedIcon: const Icon(Icons.system_update),
+                label: Text(tr('navUpdate')),
+              ),
+              NavigationDrawerDestination(
+                icon: const Icon(Icons.cleaning_services_outlined),
+                selectedIcon: const Icon(Icons.cleaning_services),
+                label: Text(tr('navClearCache')),
               ),
             ],
           ),
@@ -415,7 +481,7 @@ class _AddButton extends StatelessWidget {
     final p = AppPalette.of(context);
     const navy = Color(0xFF17304F);
     return Tooltip(
-      message: 'Tambah pengeluaran',
+      message: tr('addExpense'),
       child: Container(
         width: _buttonRadius * 2,
         height: _buttonRadius * 2,

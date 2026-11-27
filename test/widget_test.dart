@@ -1,4 +1,5 @@
 import 'package:expense_tracker/controllers/expense_controller.dart';
+import 'package:expense_tracker/controllers/locale_controller.dart';
 import 'package:expense_tracker/controllers/theme_controller.dart';
 import 'package:expense_tracker/main.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ void main() {
         providers: [
           ChangeNotifierProvider(create: (_) => ExpenseController()),
           ChangeNotifierProvider(create: (_) => ThemeController()),
+          ChangeNotifierProvider(create: (_) => LocaleController()),
         ],
         child: const ExpenseTrackerApp(),
       );
@@ -24,7 +26,7 @@ void main() {
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.byTooltip('Home'), findsOneWidget);
     expect(find.byTooltip('Pencatatan'), findsOneWidget);
-    expect(find.byTooltip('Tambah pengeluaran'), findsOneWidget);
+    expect(find.byTooltip('Tambah Pengeluaran'), findsOneWidget);
   });
 
   testWidgets('Navigasi bawah pindah ke Pencatatan lalu kembali ke Home',
@@ -76,7 +78,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(app());
 
-    await tester.tap(find.byTooltip('Tambah pengeluaran'));
+    await tester.tap(find.byTooltip('Tambah Pengeluaran'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Tambah Pengeluaran'), findsOneWidget);

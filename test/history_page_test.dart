@@ -10,7 +10,7 @@ import 'package:provider/provider.dart';
 class _FakeController extends ExpenseController {
   static const _categories = [
     Category(id: 1, name: 'Makanan', icon: 'food', colorValue: 0xFFFF9800),
-    Category(id: 2, name: 'Game', icon: 'game', colorValue: 0xFF00BCD4),
+    Category(id: 2, name: 'Top-Up', icon: 'game', colorValue: 0xFF00BCD4),
   ];
 
   @override
@@ -68,15 +68,16 @@ void main() {
       ),
     );
 
+    // Judul tidak ditampilkan lagi; baris dikenali dari nominalnya.
     expect(find.text('Riwayat Oktober 2026'), findsOneWidget);
-    expect(find.text('Nasi goreng'), findsOneWidget);
-    expect(find.text('Voucher'), findsOneWidget);
+    expect(find.text('Rp 15.000'), findsOneWidget);
+    expect(find.text('Rp 50.000'), findsOneWidget);
 
     await pick(tester, 'Makanan');
-    expect(find.text('Nasi goreng'), findsOneWidget);
-    expect(find.text('Voucher'), findsNothing);
+    expect(find.text('Rp 15.000'), findsOneWidget);
+    expect(find.text('Rp 50.000'), findsNothing);
 
     await pick(tester, 'Semua kategori');
-    expect(find.text('Voucher'), findsOneWidget);
+    expect(find.text('Rp 50.000'), findsOneWidget);
   });
 }

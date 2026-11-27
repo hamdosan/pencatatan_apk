@@ -9,8 +9,8 @@ class ThemeController extends ChangeNotifier {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _mode = ThemeMode.values.asNameMap()[prefs.getString(_key)] ??
-        ThemeMode.dark;
+    _mode =
+        ThemeMode.values.asNameMap()[prefs.getString(_key)] ?? ThemeMode.dark;
     notifyListeners();
   }
 

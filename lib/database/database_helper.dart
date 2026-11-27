@@ -9,7 +9,7 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
 
   static const _dbName = 'expense_tracker.db';
-  static const _dbVersion = 4;
+  static const _dbVersion = 6;
 
   static Database? _database;
 
@@ -46,10 +46,40 @@ class DatabaseHelper {
       }
     }
     if (oldVersion < 4) {
-      await db.execute('ALTER TABLE expenses ADD COLUMN latitude REAL');
-      await db.execute('ALTER TABLE expenses ADD COLUMN longitude REAL');
-      await db.execute('ALTER TABLE expenses ADD COLUMN address TEXT');
+      await _addColumnIfMissing(db, 'expenses', 'latitude', 'REAL');
+      await _addColumnIfMissing(db, 'expenses', 'longitude', 'REAL');
+      await _addColumnIfMissing(db, 'expenses', 'address', 'TEXT');
     }
+    if (oldVersion < 5) {
+      await _addColumnIfMissing(
+          db, 'expenses', 'payment_method', "TEXT NOT NULL DEFAULT 'cash'");
+    }
+    if (oldVersion < 6) {
+      // Ganti nama kategori; id tetap sehingga pengeluaran lama ikut.
+      for (final (from, to, icon) in _v6Renames) {
+        await db.rawUpdate(
+          'UPDATE categories SET name = ?, icon = COALESCE(?, icon) '
+          'WHERE name = ? AND NOT EXISTS '
+          '(SELECT 1 FROM categories WHERE name = ?)',
+          [to, icon, from, to],
+        );
+        await db.update('expenses', {'title': to},
+            where: 'title = ?', whereArgs: [from]);
+      }
+    }
+  }
+
+  /// ALTER TABLE ADD COLUMN yang aman diulang: dilewati bila kolom sudah ada
+  /// (mis. DB pernah dibuka build lain dengan versi skema berbeda).
+  static Future<void> _addColumnIfMissing(
+    Database db,
+    String table,
+    String column,
+    String definition,
+  ) async {
+    final cols = await db.rawQuery('PRAGMA table_info($table)');
+    if (cols.any((c) => c['name'] == column)) return;
+    await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -73,6 +103,7 @@ class DatabaseHelper {
         latitude    REAL,
         longitude   REAL,
         address     TEXT,
+        payment_method TEXT NOT NULL DEFAULT 'cash',
         created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
         FOREIGN KEY (category_id) REFERENCES categories (id)
           ON DELETE RESTRICT
@@ -88,12 +119,19 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
+  /// (nama lama, nama baru, ikon baru atau null = tetap).
+  static const _v6Renames = <(String, String, String?)>[
+    ('Belanja', 'Shopee', null),
+    ('QR', 'Minum', 'drink'),
+    ('Game', 'Top-Up', null),
+  ];
+
   static const _defaultCategories = <Category>[
     Category(name: 'Makanan', icon: 'food', colorValue: 0xFFFF9800),
     Category(name: 'Transportasi', icon: 'transport', colorValue: 0xFF2196F3),
     ..._v2Categories,
     ..._v3Categories,
-    Category(name: 'Belanja', icon: 'shopping', colorValue: 0xFFE91E63),
+    Category(name: 'Shopee', icon: 'shopping', colorValue: 0xFFE91E63),
     Category(name: 'Tagihan', icon: 'bill', colorValue: 0xFFF44336),
     Category(name: 'Hiburan', icon: 'entertainment', colorValue: 0xFF9C27B0),
     Category(name: 'Kesehatan', icon: 'health', colorValue: 0xFF4CAF50),
@@ -102,12 +140,12 @@ class DatabaseHelper {
   ];
 
   static const _v2Categories = <Category>[
-    Category(name: 'QR', icon: 'qr', colorValue: 0xFF009688),
+    Category(name: 'Minum', icon: 'drink', colorValue: 0xFF009688),
     Category(name: 'Biaya Admin', icon: 'admin_fee', colorValue: 0xFF795548),
   ];
 
   static const _v3Categories = <Category>[
-    Category(name: 'Game', icon: 'game', colorValue: 0xFF00BCD4),
+    Category(name: 'Top-Up', icon: 'game', colorValue: 0xFF00BCD4),
   ];
 
   Future<List<Category>> getCategories() async {
@@ -124,8 +162,8 @@ class DatabaseHelper {
     final unknown = _defaultCategories.length;
     final indexed = categories.indexed.toList()
       ..sort((a, b) {
-        final byRank = (rank[a.$2.name] ?? unknown)
-            .compareTo(rank[b.$2.name] ?? unknown);
+        final byRank =
+            (rank[a.$2.name] ?? unknown).compareTo(rank[b.$2.name] ?? unknown);
         return byRank != 0 ? byRank : a.$1.compareTo(b.$1);
       });
     return [for (final (_, category) in indexed) category];

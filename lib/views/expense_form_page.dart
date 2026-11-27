@@ -8,6 +8,7 @@ import 'widgets/category_dropdown.dart';
 import 'widgets/delete_dialog.dart';
 import 'widgets/formatters.dart';
 import 'widgets/glass.dart';
+import '../l10n/l10n.dart';
 
 /// Form tambah / ubah pengeluaran. [expense] null = mode tambah.
 class ExpenseFormPage extends StatefulWidget {
@@ -20,10 +21,10 @@ class ExpenseFormPage extends StatefulWidget {
 
 class _ExpenseFormPageState extends State<ExpenseFormPage> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleCtrl;
   late final TextEditingController _amountCtrl;
   late final TextEditingController _noteCtrl;
   int? _categoryId;
+  PaymentMethod _payment = PaymentMethod.cash;
   late DateTime _date;
   bool _saving = false;
   double? _lat;
@@ -37,12 +38,12 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
   void initState() {
     super.initState();
     final e = widget.expense;
-    _titleCtrl = TextEditingController(text: e?.title ?? '');
     _amountCtrl = TextEditingController(
       text: e == null ? '' : groupThousands(e.amount.toString()),
     );
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     _categoryId = e?.categoryId;
+    _payment = e?.paymentMethod ?? PaymentMethod.cash;
     _date = e?.date ?? DateTime.now();
     _lat = e?.latitude;
     _lng = e?.longitude;
@@ -51,7 +52,6 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
 
   @override
   void dispose() {
-    _titleCtrl.dispose();
     _amountCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
@@ -82,7 +82,7 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Gagal mengambil lokasi: $e')),
+        SnackBar(content: Text(tr('locationFailed', {'e': e}))),
       );
     } finally {
       if (mounted) setState(() => _locating = false);
@@ -99,8 +99,8 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
     final hasLocation = _lat != null && _lng != null;
     final theme = Theme.of(context);
     return InputDecorator(
-      decoration: const InputDecoration(
-        labelText: 'Lokasi (opsional)',
+      decoration: InputDecoration(
+        labelText: tr('locationOptional'),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +115,7 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_address ?? 'Alamat tidak diketahui'),
+                      Text(_address ?? tr('addressUnknown')),
                       Text(
                         LocationService.formatCoordinates(_lat!, _lng!),
                         style: theme.textTheme.bodySmall,
@@ -140,22 +140,22 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
                       )
                     : const Icon(Icons.my_location),
                 label: Text(_locating
-                    ? 'Mencari lokasi...'
+                    ? tr('locating')
                     : hasLocation
-                        ? 'Perbarui lokasi'
-                        : 'Ambil lokasi saat ini'),
+                        ? tr('updateLocation')
+                        : tr('getLocation')),
               ),
               if (hasLocation) ...[
                 TextButton.icon(
                   onPressed: () =>
                       LocationService.instance.openInMaps(_lat!, _lng!),
                   icon: const Icon(Icons.map_outlined),
-                  label: const Text('Peta'),
+                  label: Text(tr('map')),
                 ),
                 TextButton.icon(
                   onPressed: _locating ? null : _clearLocation,
                   icon: const Icon(Icons.close),
-                  label: const Text('Hapus'),
+                  label: Text(tr('delete')),
                 ),
               ],
             ],
@@ -171,9 +171,12 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
 
     final controller = context.read<ExpenseController>();
     final note = _noteCtrl.text.trim();
+    // Judul tidak lagi diinput/ditampilkan: isi dengan nama kategori.
+    final title =
+        controller.categories.firstWhere((c) => c.id == _categoryId).name;
     final expense = Expense(
       id: widget.expense?.id,
-      title: _titleCtrl.text.trim(),
+      title: title,
       amount: parseThousands(_amountCtrl.text)!,
       categoryId: _categoryId!,
       date: _date,
@@ -181,6 +184,7 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
       latitude: _lat,
       longitude: _lng,
       address: _lat == null ? null : _address,
+      paymentMethod: _payment,
     );
 
     if (_isEdit) {
@@ -193,7 +197,13 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
 
   Future<void> _delete() async {
     final expense = widget.expense!;
-    final confirmed = await confirmDeleteExpense(context, expense.title);
+    final confirmed = await confirmDeleteExpense(
+        context,
+        context
+                .read<ExpenseController>()
+                .categoryOf(expense.categoryId)
+                ?.displayName ??
+            tr('expense'));
     if (!confirmed || !mounted) return;
     setState(() => _saving = true);
 
@@ -202,7 +212,7 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
     await context.read<ExpenseController>().deleteExpense(expense.id!);
     navigator.pop();
     messenger.showSnackBar(
-      const SnackBar(content: Text('Pengeluaran dihapus')),
+      SnackBar(content: Text(tr('expenseDeleted'))),
     );
   }
 
@@ -213,90 +223,103 @@ class _ExpenseFormPageState extends State<ExpenseFormPage> {
     return AppBackground(
         ambient: true,
         child: Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Text(_isEdit ? 'Ubah Pengeluaran' : 'Tambah Pengeluaran'),
-        actions: [
-          if (_isEdit)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Hapus',
-              onPressed: _saving ? null : _delete,
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              TextFormField(
-                controller: _titleCtrl,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Judul',
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(_isEdit ? tr('editExpense') : tr('addExpense')),
+            actions: [
+              if (_isEdit)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: tr('delete'),
+                  onPressed: _saving ? null : _delete,
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Judul wajib diisi'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _amountCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: const [ThousandsInputFormatter()],
-                decoration: const InputDecoration(
-                  labelText: 'Nominal',
-                  prefixText: 'Rp ',
-                ),
-                validator: (v) {
-                  final n = parseThousands(v);
-                  if (n == null || n <= 0) {
-                    return 'Masukkan nominal lebih dari 0';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              CategoryDropdown(
-                categories: categories,
-                value: _categoryId,
-                onChanged: (v) => setState(() => _categoryId = v),
-                validator: (v) => v == null ? 'Pilih kategori' : null,
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _pickDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Tanggal',
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(formatDate(_date)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _noteCtrl,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Catatan (opsional)',
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildLocationField(context),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: const Icon(Icons.save),
-                label: Text(_isEdit ? 'Simpan Perubahan' : 'Simpan'),
-              ),
             ],
           ),
-        ),
-      ),
-    ));
+          body: SafeArea(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  CategoryDropdown(
+                    categories: categories,
+                    value: _categoryId,
+                    onChanged: (v) => setState(() => _categoryId = v),
+                    validator: (v) => v == null ? tr('chooseCategory') : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _amountCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: const [ThousandsInputFormatter()],
+                    decoration: InputDecoration(
+                      labelText: tr('amount'),
+                      prefixText: 'Rp ',
+                    ),
+                    validator: (v) {
+                      final n = parseThousands(v);
+                      if (n == null || n <= 0) {
+                        return tr('amountInvalid');
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  InputDecorator(
+                    decoration: InputDecoration(labelText: tr('payment')),
+                    child: SegmentedButton<PaymentMethod>(
+                      segments: const [
+                        ButtonSegment(
+                            value: PaymentMethod.cash,
+                            label: Text('Cash'),
+                            icon: Icon(Icons.payments_outlined)),
+                        ButtonSegment(
+                            value: PaymentMethod.qr,
+                            label: Text('QR'),
+                            icon: Icon(Icons.qr_code_2)),
+                        ButtonSegment(
+                            value: PaymentMethod.tf,
+                            label: Text('TF'),
+                            icon: Icon(Icons.account_balance_outlined)),
+                      ],
+                      selected: {_payment},
+                      showSelectedIcon: false,
+                      onSelectionChanged: (s) =>
+                          setState(() => _payment = s.first),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: _pickDate,
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: tr('date'),
+                        suffixIcon: const Icon(Icons.calendar_today),
+                      ),
+                      child: Text(formatDate(_date)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _noteCtrl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: tr('noteOptional'),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLocationField(context),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: _saving ? null : _save,
+                    icon: const Icon(Icons.save),
+                    label: Text(_isEdit ? tr('saveChanges') : tr('save')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ));
   }
 }
