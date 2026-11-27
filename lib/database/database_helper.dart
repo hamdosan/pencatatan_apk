@@ -69,8 +69,6 @@ class DatabaseHelper {
     }
   }
 
-  /// ALTER TABLE ADD COLUMN yang aman diulang: dilewati bila kolom sudah ada
-  /// (mis. DB pernah dibuka build lain dengan versi skema berbeda).
   static Future<void> _addColumnIfMissing(
     Database db,
     String table,
@@ -119,7 +117,6 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  /// (nama lama, nama baru, ikon baru atau null = tetap).
   static const _v6Renames = <(String, String, String?)>[
     ('Belanja', 'Shopee', null),
     ('QR', 'Minum', 'drink'),
@@ -182,8 +179,6 @@ class DatabaseHelper {
     return rows.map(Expense.fromMap).toList();
   }
 
-  /// Total pengeluaran per bulan dalam rentang [from] (inklusif) sampai
-  /// [to] (eksklusif). Kunci map: 'yyyy-MM'.
   Future<Map<String, int>> getMonthlyTotals(DateTime from, DateTime to) async {
     final db = await database;
     final rows = await db.rawQuery(
@@ -196,8 +191,6 @@ class DatabaseHelper {
     };
   }
 
-  /// Jumlah transaksi per bulan dalam rentang [from] (inklusif) sampai
-  /// [to] (eksklusif). Kunci map: 'yyyy-MM'.
   Future<Map<String, int>> getMonthlyCounts(DateTime from, DateTime to) async {
     final db = await database;
     final rows = await db.rawQuery(
@@ -208,8 +201,6 @@ class DatabaseHelper {
     return {for (final r in rows) r['ym'] as String: (r['n'] as num).toInt()};
   }
 
-  /// Semua pengeluaran dalam rentang [from] (inklusif) sampai [to]
-  /// (eksklusif), urut tanggal naik.
   Future<List<Expense>> getExpensesInRange(DateTime from, DateTime to) async {
     final db = await database;
     final rows = await db.query(

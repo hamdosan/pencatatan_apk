@@ -1,17 +1,13 @@
 import '../l10n/l10n.dart';
 
-/// Model kategori pengeluaran.
 class Category {
   final int? id;
   final String name;
 
-  /// Kunci ikon (dipetakan ke IconData di layer View).
   final String icon;
 
-  /// Warna dalam bentuk ARGB int, mis. 0xFFFF9800.
   final int colorValue;
 
-  /// Nama untuk ditampilkan (kategori bawaan diterjemahkan).
   String get displayName => trCategory(name);
 
   const Category({

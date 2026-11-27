@@ -41,8 +41,6 @@ class ExpenseTrackerApp extends StatefulWidget {
 class _ExpenseTrackerAppState extends State<ExpenseTrackerApp> {
   AppLanguage? _lastLanguage;
 
-  /// Teks diambil lewat [tr] (bukan InheritedWidget), jadi saat bahasa
-  /// berganti seluruh widget ditandai rebuild tanpa membuang state.
   void _rebuildAll() {
     void mark(Element e) {
       e.markNeedsBuild();

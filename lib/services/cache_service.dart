@@ -3,12 +3,9 @@ import 'dart:io';
 import 'package:flutter/painting.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// Membersihkan cache aplikasi (folder sementara + cache gambar di memori).
-/// Data pengeluaran (database) dan pengaturan tidak ikut terhapus.
 class CacheService {
   CacheService._();
 
-  /// Ukuran folder cache dalam byte.
   static Future<int> size() async {
     final dir = await getTemporaryDirectory();
     if (!await dir.exists()) return 0;
@@ -23,7 +20,6 @@ class CacheService {
     return total;
   }
 
-  /// Hapus isi folder cache. Mengembalikan jumlah byte yang dibebaskan.
   static Future<int> clear() async {
     final freed = await size();
     final dir = await getTemporaryDirectory();

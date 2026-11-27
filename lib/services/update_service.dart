@@ -7,7 +7,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../config/update_config.dart';
 import '../l10n/l10n.dart';
 
-/// Info rilis terbaru di GitHub Releases.
 class AppRelease {
   const AppRelease({
     required this.version,
@@ -15,7 +14,6 @@ class AppRelease {
     required this.notes,
   });
 
-  /// Format sama dengan pubspec, mis. '1.0.1+2'.
   final String version;
   final String apkUrl;
   final String notes;
@@ -28,12 +26,10 @@ class UpdateException implements Exception {
   String toString() => message;
 }
 
-/// Cek dan pasang versi APK terbaru dari GitHub Releases.
 class UpdateService {
   UpdateService({http.Client? client}) : _client = client ?? http.Client();
   final http.Client _client;
 
-  /// Versi terpasang, mis. '1.0.0+1'.
   static Future<String> currentVersion() async {
     final info = await PackageInfo.fromPlatform();
     return info.buildNumber.isEmpty
@@ -77,8 +73,6 @@ class UpdateService {
     );
   }
 
-  /// True jika [candidate] lebih baru dari [current].
-  /// Membandingkan major.minor.patch lalu build number (setelah '+').
   static bool isNewer(String candidate, String current) {
     final a = _parts(candidate), b = _parts(current);
     for (var i = 0; i < 4; i++) {
@@ -100,7 +94,6 @@ class UpdateService {
     ];
   }
 
-  /// Download APK lalu buka installer Android. Stream berisi progres.
   Stream<OtaEvent> install(AppRelease release) => OtaUpdate().execute(
         release.apkUrl,
         destinationFilename: 'expense_tracker.apk',

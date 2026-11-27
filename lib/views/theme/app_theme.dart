@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Warna khusus desain "navy glass" yang tidak ada di [ColorScheme].
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
   const AppPalette({
@@ -15,23 +14,18 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.muted,
   });
 
-  /// Gradasi latar belakang layar.
   final Color bgTop;
   final Color bgBottom;
 
-  /// Kartu transparan di atas latar.
   final Color glass;
   final Color glassBorder;
 
-  /// Panel terang (seperti panel "Statistics" pada referensi).
   final Color panelTop;
   final Color panelBottom;
 
-  /// Aksen emas untuk tombol penting.
   final Color accent;
   final Color onAccent;
 
-  /// Teks sekunder di atas latar.
   final Color muted;
 
   static const dark = AppPalette(
@@ -137,7 +131,6 @@ class AppTheme {
         ),
       );
 
-  /// Tema terang untuk isi panel terang ([FrostPanel]) di mode gelap.
   static ThemeData get panel => light;
 
   static ThemeData _build({

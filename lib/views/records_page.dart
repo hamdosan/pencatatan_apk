@@ -12,8 +12,6 @@ import 'widgets/formatters.dart';
 import 'widgets/month_selector.dart';
 import '../l10n/l10n.dart';
 
-/// Tab "Pencatatan": ringkasan + daftar pengeluaran bulan terpilih.
-/// Scaffold (AppBar, FAB, navigasi) disediakan oleh MainShell.
 class RecordsPage extends StatelessWidget {
   const RecordsPage({super.key});
 

@@ -8,10 +8,6 @@ import '../models/category.dart';
 import '../models/expense.dart';
 import '../l10n/l10n.dart';
 
-/// Membuat file .xlsx rekap untuk bulan-bulan yang dipilih:
-/// - "Rekap"       : total & jumlah transaksi per bulan
-/// - "Per Kategori": total per kategori setahun
-/// - "Detail"      : semua transaksi
 class ExcelExportService {
   static const _rupiah = CustomNumericNumFormat(formatCode: '"Rp" #,##0');
   static const _percent = CustomNumericNumFormat(formatCode: '0.0%');
@@ -30,12 +26,9 @@ class ExcelExportService {
   static String _short(int year, int m) =>
       DateFormat('MMM', L10n.intlLocale).format(DateTime(year, m));
 
-  /// Nama bulan untuk nama file: selalu huruf Latin agar aman di semua HP.
   static String _shortFile(int year, int m) =>
       DateFormat('MMM', 'en_US').format(DateTime(year, m));
 
-  /// Label periode, mis. "November 2026", "Jan, Feb, Mar 2026",
-  /// atau "Tahun 2026" bila 12 bulan dipilih.
   static String periodLabel(int year, Set<int> months) {
     final sorted = months.toList()..sort();
     if (sorted.length == 12) return tr('yearLabel', {'y': year});
@@ -46,8 +39,6 @@ class ExcelExportService {
     return '${sorted.map((m) => _short(year, m)).join(', ')} $year';
   }
 
-  /// Mis. Rekap_Pengeluaran_2026-11.xlsx, Rekap_Pengeluaran_2026_Jan-Feb.xlsx,
-  /// atau Rekap_Pengeluaran_2026.xlsx bila 12 bulan.
   static String fileName(int year, Set<int> months) {
     final sorted = months.toList()..sort();
     final prefix = tr('fileRecap');
@@ -58,8 +49,6 @@ class ExcelExportService {
     return '${prefix}_${year}_${sorted.map((m) => _shortFile(year, m)).join('-')}.xlsx';
   }
 
-  /// [recaps] = 12 bulan dari [ExpenseController.recapOfYear].
-  /// Hanya bulan dalam [months] (1–12) yang ditulis ke file.
   static Uint8List build({
     required int year,
     required Set<int> months,

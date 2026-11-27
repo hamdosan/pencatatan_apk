@@ -4,13 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/l10n.dart';
 import '../services/reminder_service.dart';
 
-/// Menyimpan & mengganti bahasa aplikasi.
 class LocaleController extends ChangeNotifier {
   static const _key = 'app_language';
 
   AppLanguage get language => L10n.current;
 
-  /// Baca bahasa tersimpan. Dipanggil sebelum runApp.
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     L10n.current = AppLanguage.fromCode(prefs.getString(_key));

@@ -3,10 +3,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'ambient_effects.dart';
 
-/// Latar belakang gradasi navy di belakang seluruh layar.
-///
-/// [ambient] menambahkan animasi latar (salju di mode gelap, cahaya di mode
-/// terang) di antara gradasi dan konten.
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key, required this.child, this.ambient = false});
   final Widget child;
@@ -33,7 +29,6 @@ class AppBackground extends StatelessWidget {
   }
 }
 
-/// Kartu transparan dengan garis tepi tipis.
 class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
@@ -78,8 +73,6 @@ class GlassCard extends StatelessWidget {
   }
 }
 
-/// Panel terang dengan teks gelap, seperti panel "Statistics" pada
-/// referensi. Isinya memakai tema terang agar kontras.
 class FrostPanel extends StatelessWidget {
   const FrostPanel({
     super.key,
@@ -128,7 +121,6 @@ class FrostPanel extends StatelessWidget {
   }
 }
 
-/// Judul bagian dengan aksi opsional di kanan ("Lihat semua >").
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -177,7 +169,6 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-/// Ikon bulat transparan (seperti tombol lonceng pada referensi).
 class GlassIconButton extends StatelessWidget {
   const GlassIconButton({
     super.key,

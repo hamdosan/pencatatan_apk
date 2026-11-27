@@ -10,7 +10,6 @@ import 'widgets/month_selector.dart' show kFirstYear;
 import 'widgets/glass.dart';
 import '../l10n/l10n.dart';
 
-/// Rekap pencatatan per bulan dalam satu tahun.
 class RecapPage extends StatefulWidget {
   const RecapPage({super.key});
 
@@ -40,7 +39,6 @@ class _RecapPageState extends State<RecapPage> {
 
   void _load() => _future = _controller.recapOfYear(_year);
 
-  /// Muat ulang saat data berubah (mis. setelah edit di halaman riwayat).
   void _reload() {
     if (mounted) setState(_load);
   }
@@ -60,7 +58,6 @@ class _RecapPageState extends State<RecapPage> {
 
   bool _exporting = false;
 
-  /// Tampilkan pilihan bulan, lalu ekspor bulan yang dipilih.
   Future<void> _chooseMonthsAndDownload() async {
     final recaps = await _future;
     if (!mounted) return;
@@ -341,7 +338,6 @@ class _MonthRecapTile extends StatelessWidget {
   }
 }
 
-/// Bottom sheet pilih bulan yang akan diekspor ke Excel.
 class _MonthExportSheet extends StatefulWidget {
   const _MonthExportSheet({
     required this.year,
@@ -351,7 +347,6 @@ class _MonthExportSheet extends StatefulWidget {
 
   final int year;
 
-  /// Bulan yang sudah lewat/berjalan pada [year], urut Jan -> Des.
   final List<MonthRecap> recaps;
   final Set<int> initial;
 

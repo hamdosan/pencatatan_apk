@@ -6,7 +6,6 @@ import '../models/expense.dart';
 import '../services/reminder_service.dart';
 import '../l10n/l10n.dart';
 
-/// Ringkasan satu bulan untuk halaman rekap.
 class MonthRecap {
   const MonthRecap({
     required this.month,
@@ -20,8 +19,6 @@ class MonthRecap {
   final int count;
   final int previousTotal;
 
-  /// Persentase perubahan dibanding bulan sebelumnya. Null jika tidak bisa
-  /// dibandingkan (bulan sebelumnya kosong).
   double? get changePercent =>
       previousTotal == 0 ? null : (total - previousTotal) * 100 / previousTotal;
 }
@@ -46,7 +43,6 @@ class ExpenseController extends ChangeNotifier {
     return _selectedMonth.year == now.year && _selectedMonth.month == now.month;
   }
 
-  /// Pengeluaran bulan terpilih yang punya lokasi, terbaru lebih dulu.
   List<Expense> get locationHistory =>
       _expenses.where((e) => e.hasLocation).toList();
 
@@ -62,7 +58,6 @@ class ExpenseController extends ChangeNotifier {
     return list;
   }
 
-  /// Total per metode pembayaran bulan terpilih (urutan enum, termasuk 0).
   Map<PaymentMethod, int> get totalByPayment {
     final map = {for (final m in PaymentMethod.values) m: 0};
     for (final e in _expenses) {
@@ -71,7 +66,6 @@ class ExpenseController extends ChangeNotifier {
     return map;
   }
 
-  /// Total per tanggal pada bulan terpilih. Index 0 = tanggal 1.
   List<int> get dailyTotals {
     final days = DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day;
     final list = List<int>.filled(days, 0);
@@ -81,7 +75,6 @@ class ExpenseController extends ChangeNotifier {
     return list;
   }
 
-  /// Tren total 6 bulan terakhir, berakhir di bulan terpilih.
   List<(DateTime, int)> get monthlyTrend => List.unmodifiable(_trend);
   List<(DateTime, int)> _trend = [];
 
@@ -103,8 +96,6 @@ class ExpenseController extends ChangeNotifier {
     ];
   }
 
-  /// Rekap 12 bulan pada [year]: total, jumlah transaksi, dan total bulan
-  /// sebelumnya (untuk perbandingan; Januari dibanding Desember tahun lalu).
   Future<List<MonthRecap>> recapOfYear(int year) async {
     final from = DateTime(year - 1, 12);
     final to = DateTime(year + 1);
@@ -123,7 +114,6 @@ class ExpenseController extends ChangeNotifier {
     ];
   }
 
-  /// Semua pengeluaran pada [year], urut tanggal naik.
   Future<List<Expense>> expensesOfYear(int year) =>
       _db.getExpensesInRange(DateTime(year), DateTime(year + 1));
 
@@ -170,7 +160,6 @@ class ExpenseController extends ChangeNotifier {
     await loadExpenses();
   }
 
-  /// Pilih bulan tertentu. Bulan di masa depan dibatasi ke bulan ini.
   Future<void> selectMonth(int year, int month) async {
     final now = DateTime.now();
     var target = DateTime(year, month);

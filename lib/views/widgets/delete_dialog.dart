@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
 
-/// Minta konfirmasi sebelum menghapus pengeluaran berjudul [title].
 Future<bool> confirmDeleteExpense(BuildContext context, String title) async {
   return await showDialog<bool>(
         context: context,

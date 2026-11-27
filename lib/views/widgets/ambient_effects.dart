@@ -3,9 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-/// Lapisan animasi latar: salju turun di mode gelap, berkas cahaya dan
-/// partikel cahaya melayang di mode terang. Tidak menerima sentuhan dan
-/// dimatikan bila pengguna meminta animasi dikurangi.
 class AmbientEffects extends StatefulWidget {
   const AmbientEffects({super.key});
 
@@ -175,7 +172,6 @@ class _LightPainter extends CustomPainter {
     _paintMotes(canvas, size, t);
   }
 
-  /// Berkas cahaya dari pojok kiri atas yang bergoyang dan berdenyut pelan.
   void _paintRays(Canvas canvas, Size size, double t) {
     final source = Offset(-size.width * 0.15, -size.height * 0.08);
     final length = size.height * 0.9;
@@ -210,7 +206,6 @@ class _LightPainter extends CustomPainter {
     }
   }
 
-  /// Partikel cahaya lembut yang naik perlahan dan berkelip.
   void _paintMotes(Canvas canvas, Size size, double t) {
     final h = size.height + 40;
     for (final m in motes) {

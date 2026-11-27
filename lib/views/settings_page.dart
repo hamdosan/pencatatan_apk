@@ -5,7 +5,6 @@ import '../controllers/locale_controller.dart';
 import '../l10n/l10n.dart';
 import 'widgets/glass.dart';
 
-/// Halaman pengaturan: saat ini berisi pilihan bahasa.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 

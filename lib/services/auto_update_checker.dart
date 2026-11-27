@@ -6,12 +6,6 @@ import '../config/update_config.dart';
 import '../views/widgets/update_dialog.dart';
 import 'update_service.dart';
 
-/// Cek update otomatis di latar belakang saat aplikasi dibuka.
-///
-/// - Dibatasi sekali per [checkInterval] agar tidak kena batas API GitHub
-///   (60 request/jam per IP tanpa login).
-/// - Versi yang dipilih "Lewati versi ini" tidak ditawarkan lagi.
-/// - Gagal cek (offline, dsb.) diabaikan diam-diam.
 class AutoUpdateChecker {
   AutoUpdateChecker._();
 

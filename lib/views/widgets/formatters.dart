@@ -18,17 +18,14 @@ String formatMonth(DateTime d) =>
 
 final _nonDigit = RegExp(r'\D');
 
-/// Sisipkan titik pemisah ribuan pada deret angka, mis. 1000 -> 1.000.
 String groupThousands(String digits) => digits.replaceAllMapped(
       RegExp(r'\B(?=(\d{3})+$)'),
       (_) => '.',
     );
 
-/// Baca nominal berformat ribuan, mis. 1.000 -> 1000. Null jika tidak valid.
 int? parseThousands(String? text) =>
     int.tryParse((text ?? '').replaceAll('.', ''));
 
-/// Format input nominal dengan pemisah ribuan saat mengetik.
 class ThousandsInputFormatter extends TextInputFormatter {
   const ThousandsInputFormatter();
 

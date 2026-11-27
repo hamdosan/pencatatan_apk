@@ -4,8 +4,6 @@ import '../../models/category.dart';
 import 'category_icons.dart';
 import '../../l10n/l10n.dart';
 
-/// Pilihan kategori yang membuka daftar secara animasi di bawah field.
-/// Maksimal [_visibleItems] item terlihat, sisanya di-scroll.
 class CategoryDropdown extends StatefulWidget {
   const CategoryDropdown({
     super.key,
@@ -21,7 +19,6 @@ class CategoryDropdown extends StatefulWidget {
   final ValueChanged<int?> onChanged;
   final FormFieldValidator<int>? validator;
 
-  /// Label opsi tanpa filter (nilai null). Null = opsi ini tidak ditampilkan.
   final String? allOption;
 
   @override

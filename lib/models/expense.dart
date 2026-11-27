@@ -1,4 +1,3 @@
-/// Metode pembayaran pengeluaran. [name] disimpan di DB.
 enum PaymentMethod {
   cash('Cash'),
   qr('QR'),
@@ -11,22 +10,18 @@ enum PaymentMethod {
       .firstWhere((m) => m.name == v, orElse: () => PaymentMethod.cash);
 }
 
-/// Model pengeluaran.
 class Expense {
   final int? id;
   final String title;
 
-  /// Nominal dalam Rupiah (bilangan bulat).
   final int amount;
   final int categoryId;
   final DateTime date;
   final String? note;
 
-  /// Lokasi saat pengeluaran dicatat (opsional).
   final double? latitude;
   final double? longitude;
 
-  /// Alamat hasil reverse geocoding (opsional, bisa null walau ada koordinat).
   final String? address;
 
   final PaymentMethod paymentMethod;
@@ -71,7 +66,6 @@ class Expense {
         paymentMethod: paymentMethod ?? this.paymentMethod,
       );
 
-  /// Tanggal disimpan sebagai teks 'yyyy-MM-dd' agar mudah difilter per bulan.
   static String dateToDb(DateTime d) => '${d.year.toString().padLeft(4, '0')}-'
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';

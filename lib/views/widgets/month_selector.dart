@@ -5,11 +5,8 @@ import '../../controllers/expense_controller.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/l10n.dart';
 
-/// Tahun paling awal yang bisa dipilih.
 const kFirstYear = 2000;
 
-/// Navigasi bulan. Tap nama bulan untuk memilih bulan,
-/// tap tahun untuk memilih tahun.
 class MonthSelector extends StatelessWidget {
   const MonthSelector({super.key, required this.controller});
   final ExpenseController controller;
@@ -126,7 +123,6 @@ class _PickerChip extends StatelessWidget {
   }
 }
 
-/// Grid 12 bulan pada [year]. Bulan di masa depan tidak bisa dipilih.
 class _MonthPickerDialog extends StatelessWidget {
   const _MonthPickerDialog({required this.year, required this.selectedMonth});
 

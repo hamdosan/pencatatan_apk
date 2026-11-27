@@ -1429,7 +1429,6 @@ const Map<String, List<String>> _strings = {
   ],
 };
 
-/// Nama kategori bawaan (kunci = nama di DB).
 const Map<String, List<String>> _categoryNames = {
   'Makanan': [
     'Makanan',

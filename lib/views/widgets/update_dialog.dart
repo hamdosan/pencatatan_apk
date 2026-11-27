@@ -6,11 +6,6 @@ import 'package:ota_update/ota_update.dart';
 import '../../services/update_service.dart';
 import '../../l10n/l10n.dart';
 
-/// Tampilkan dialog cek & pasang update.
-///
-/// Jika [release] diberikan (dari cek otomatis), dialog langsung menawarkan
-/// update dan menampilkan tombol "Lewati versi ini". Mengembalikan `true`
-/// jika user memilih melewati versi tersebut.
 Future<bool?> showUpdateDialog(
   BuildContext context, {
   AppRelease? release,

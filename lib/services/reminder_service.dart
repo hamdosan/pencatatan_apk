@@ -5,10 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Menjadwalkan pengingat jika user belum mencatat pengeluaran selama 1 hari.
-///
-/// Setiap kali ada catatan baru, jadwal lama dibatalkan dan pengingat
-/// dijadwalkan ulang 24 jam setelah input terakhir.
 class ReminderService {
   ReminderService._();
   static final ReminderService instance = ReminderService._();
@@ -55,7 +51,6 @@ class ReminderService {
     }
   }
 
-  /// Jadwalkan ulang dengan teks terbaru (mis. setelah ganti bahasa).
   Future<void> reschedule() async {
     final prefs = await SharedPreferences.getInstance();
     final lastMs = prefs.getInt(_lastInputKey);
@@ -64,7 +59,6 @@ class ReminderService {
     }
   }
 
-  /// Panggil setiap kali user menambah catatan pengeluaran.
   Future<void> markExpenseInput() async {
     final now = DateTime.now();
     final prefs = await SharedPreferences.getInstance();

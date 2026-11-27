@@ -20,7 +20,6 @@ import '../l10n/l10n.dart';
 const _chartAnim = Duration(milliseconds: 450);
 const _chartCurve = Curves.easeOutCubic;
 
-/// Tab "Home": ringkasan dan grafik pengeluaran.
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
@@ -84,7 +83,6 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-/// Sapaan di kiri + kartu total bulan ini di kanan.
 class _Hero extends StatefulWidget {
   const _Hero({required this.controller});
   final ExpenseController controller;
@@ -94,7 +92,6 @@ class _Hero extends StatefulWidget {
 }
 
 class _HeroState extends State<_Hero> {
-  /// Nominal total disembunyikan sampai kartu diketuk.
   bool _hidden = true;
 
   @override
@@ -261,7 +258,6 @@ class _HeroState extends State<_Hero> {
   }
 }
 
-/// Dua kartu kecil: rata-rata per hari & jumlah transaksi.
 class _StatRow extends StatelessWidget {
   const _StatRow({required this.controller});
   final ExpenseController controller;
@@ -352,7 +348,6 @@ class _EmptyChart extends StatelessWidget {
       );
 }
 
-/// Label ringkas: 1.500.000 -> 1,5jt; 25.000 -> 25rb.
 String _compact(num v) {
   if (v >= 1000000) {
     return tr('compactMillion',
@@ -362,7 +357,6 @@ String _compact(num v) {
   return v.toStringAsFixed(0);
 }
 
-/// Batas atas sumbu Y yang "bulat" agar garis bantu rapi.
 double _niceMax(int max) {
   if (max <= 0) return 1;
   final mag = math.pow(10, (math.log(max) / math.ln10).floor()).toDouble();
@@ -372,7 +366,6 @@ double _niceMax(int max) {
   return 10 * mag;
 }
 
-/// Grafik garis halus 6 bulan; titik bulan terpilih selalu disorot.
 class _TrendLineChart extends StatelessWidget {
   const _TrendLineChart({required this.controller});
   final ExpenseController controller;
@@ -557,7 +550,6 @@ class _TrendLineChart extends StatelessWidget {
 
 String _compactRupiah(num v) => 'Rp ${_compact(v)}';
 
-/// Kartu-kartu kategori 2 kolom (seperti "Bills due" pada referensi).
 class _CategoryTiles extends StatelessWidget {
   const _CategoryTiles({required this.controller});
   final ExpenseController controller;
@@ -667,7 +659,6 @@ class _CategoryTiles extends StatelessWidget {
   }
 }
 
-/// Lembar bawah berisi daftar pengeluaran bulan ini untuk satu kategori.
 void _showCategoryExpenses(BuildContext context, int categoryId) {
   showModalBottomSheet<void>(
     context: context,
@@ -828,7 +819,6 @@ const _paymentIcons = {
   PaymentMethod.tf: Icons.account_balance_outlined,
 };
 
-/// Donat porsi pengeluaran per metode pembayaran + legenda nominal.
 class _PaymentPieChart extends StatelessWidget {
   const _PaymentPieChart({required this.controller});
   final ExpenseController controller;
@@ -998,8 +988,6 @@ class _DailyBarChart extends StatelessWidget {
   }
 }
 
-/// Daftar pengeluaran bulan ini yang tercatat dengan lokasi.
-/// Ditampilkan di dalam [FrostPanel] (tema terang).
 class _LocationHistory extends StatefulWidget {
   const _LocationHistory({required this.controller});
   final ExpenseController controller;

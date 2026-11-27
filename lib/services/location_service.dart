@@ -3,7 +3,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../l10n/l10n.dart';
 
-/// Hasil pengambilan lokasi.
 class PickedLocation {
   const PickedLocation({
     required this.latitude,
@@ -16,7 +15,6 @@ class PickedLocation {
   final String? address;
 }
 
-/// Error yang pesannya siap ditampilkan ke pengguna.
 class LocationException implements Exception {
   const LocationException(this.message);
   final String message;
@@ -29,11 +27,8 @@ class LocationService {
   LocationService._();
   static final LocationService instance = LocationService._();
 
-  /// Alamat mengikuti bahasa aplikasi.
   Geocoding get _geocoding => Geocoding(locale: L10n.current.locale);
 
-  /// Ambil posisi saat ini beserta alamatnya. Melempar [LocationException]
-  /// jika GPS mati atau izin ditolak.
   Future<PickedLocation> getCurrentLocation() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw LocationException(tr('gpsOff'));
@@ -76,7 +71,6 @@ class LocationService {
     );
   }
 
-  /// Alamat ringkas dari koordinat. Null jika offline / tidak ditemukan.
   Future<String?> _reverseGeocode(double lat, double lng) async {
     try {
       final places = await _geocoding.placemarkFromCoordinates(lat, lng);
@@ -99,7 +93,6 @@ class LocationService {
     }
   }
 
-  /// Buka koordinat di aplikasi peta (Google Maps / browser).
   Future<bool> openInMaps(double lat, double lng) {
     final uri = Uri.https('www.google.com', '/maps/search/', {
       'api': '1',

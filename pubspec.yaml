@@ -1,5 +1,5 @@
 name: expense_tracker
-description: Aplikasi pencatatan pengeluaran dengan arsitektur MVC dan database SQLite.
+description: Aplikasi pencatatan pengeluaran.
 publish_to: 'none'
 version: 1.0.1+2
 

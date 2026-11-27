@@ -9,8 +9,6 @@ import 'widgets/formatters.dart';
 import 'widgets/glass.dart';
 import '../l10n/l10n.dart';
 
-/// Riwayat pengeluaran pada bulan yang dipilih di halaman utama,
-/// dengan filter per kategori.
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
 
@@ -19,7 +17,6 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  /// Null = semua kategori.
   int? _categoryId;
 
   @override

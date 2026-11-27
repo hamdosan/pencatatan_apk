@@ -17,8 +17,6 @@ import 'widgets/glass.dart';
 import 'widgets/update_dialog.dart';
 import '../l10n/l10n.dart';
 
-/// Kerangka utama: latar gradasi, judul besar, drawer menu, dan navigasi bawah
-/// berupa ikon (Home / Pencatatan) dengan tombol "+" di tengah.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -295,8 +293,6 @@ const double _notchRadius = 40;
 const double _buttonRadius = 30;
 const double _buttonLift = 30; // tinggi tombol yang menonjol di atas bar
 
-/// Navigasi bawah: bar melayang dengan takik melengkung di tengah, tombol
-/// "+" bulat di takik, ikon Home (kiri) dan Pencatatan (kanan).
 class _IconNavBar extends StatelessWidget {
   const _IconNavBar({
     required this.tabs,
@@ -368,12 +364,9 @@ class _IconNavBar extends StatelessWidget {
   }
 }
 
-/// Ujung lengkung takik: [_notchEdgeInset] ke dalam dari radius takik dan
-/// [_notchEdgeDrop] di bawah garis [_barDip].
 const double _notchEdgeInset = 2;
 const double _notchEdgeDrop = 8;
 
-/// Posisi y pusat lingkaran takik, relatif ke tepi atas bar.
 final double _notchCenterY = _barDip +
     _notchEdgeDrop -
     math.sqrt(_notchRadius * _notchRadius -
@@ -471,7 +464,6 @@ class _NavIcon extends StatelessWidget {
   }
 }
 
-/// Tombol bulat "+" untuk menambah pengeluaran, duduk di takik bar.
 class _AddButton extends StatelessWidget {
   const _AddButton({required this.onPressed});
   final VoidCallback onPressed;

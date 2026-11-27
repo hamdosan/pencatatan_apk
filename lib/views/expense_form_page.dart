@@ -10,7 +10,6 @@ import 'widgets/formatters.dart';
 import 'widgets/glass.dart';
 import '../l10n/l10n.dart';
 
-/// Form tambah / ubah pengeluaran. [expense] null = mode tambah.
 class ExpenseFormPage extends StatefulWidget {
   const ExpenseFormPage({super.key, this.expense});
   final Expense? expense;
